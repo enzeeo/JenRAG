@@ -2,18 +2,19 @@
 
 ## Summary
 
-- Source documents scanned: 6
-- Wiki pages created: 90
-- Wiki links created: 862
+- Source documents scanned: 7
+- Wiki pages created: 97
+- Wiki links created: 903
 
 ## Page Types
 
-- course: 1
-- document: 6
-- section: 83
+- course: 2
+- document: 7
+- section: 88
 
 ## Source Documents
 
+- `md/cmsc_27100/cmsc_27100_fall_2025_hw1_ng.md` -> CMSC 27100 fall 2025 hw1 ng
 - `md/cmsc_27200/cmsc_27200_spring_2022_exam.md` -> cmsc 27200 spring 2022 exam
 - `md/cmsc_27200/cmsc_27200_win_2026_pset1_janos.md` -> CMSC 27200 win 2026 pset1 janos
 - `md/cmsc_27200/cmsc_27200_win_2026_pset2_janos.md` -> CMSC 27200 win 2026 pset2 janos
@@ -23,8 +24,22 @@
 
 ## Sample Pages
 
+- `course/cmsc-27100`: CMSC 27100
+  Summary: CMSC 27100 study graph built from 1 source documents.
 - `course/cmsc-27200`: CMSC 27200
   Summary: CMSC 27200 study graph built from 5 source documents.
+- `document/cmsc-27100-fall-2025-hw1-ng`: CMSC 27100 fall 2025 hw1 ng
+  Summary: # CMSC 27100—Problem Set 1 Solutions *University of Chicago, Autumn 2025* ## Solutions ### 1. Prove that for all natural numbers m,n,p , we have m (n+p) = m n + m p.
+- `section/cmsc-27100-fall-2025-hw1-ng-1-1-prove-that-for-all-natural-numbers-m-n-p-we-have`: 1. Prove that for all natural numbers $m,n,p$, we have
+  Summary: m (n+p) = m n + m p. **Solution.** First, we define m n for natural numbers m and n by - if m=z , then m n = z n = z , and - if m= (k) for some natural number k , then m n = (k) n = n + k n .
+- `section/cmsc-27100-fall-2025-hw1-ng-2-1-prove-that-for-all-natural-numbers-m-n-p-we-have`: 1. Prove that for all natural numbers $m,n,p$, we have
+  Summary: n \\ &= (n+k n) + (k) p && \\ &= (k) n + (k) p && \\ &= m n + m p && **Notes.** - The property that is being proved in this problem is distributivity of multiplication over addition. - Note that a slightly different definition of multiplication can be used, for instance, expanding on n instead of m .
+- `section/cmsc-27100-fall-2025-hw1-ng-3-2-prove-that-for-every-propositional-sentence-p-over-the-propositional-variables`: 2. Prove that for every propositional sentence $p$ over the propositional variables
+  Summary: x_1,x_2, , there is a logically equivalent propositional sentence that uses only the Sheffer stroke. **Solution.** We will prove this by induction on the propositional sentence p .
+- `section/cmsc-27100-fall-2025-hw1-ng-4-2-prove-that-for-every-propositional-sentence-p-over-the-propositional-variables`: 2. Prove that for every propositional sentence $p$ over the propositional variables
+  Summary: table c|c|c|c|c|c q & r & q r & q q & r r & (q q) (r r) \\ T & T & T & F & F & T \\ T & F & T & F & T & T \\ F & T & T & T & F & T \\ F & F & F & T & T & F To see this, we observe that by De Morgan's laws, p q ( p q) . We also see that ( p q) p q and p p p from above.
+- `section/cmsc-27100-fall-2025-hw1-ng-5-3-prove-that-for-all-integers-x-and-sorted-lists-of-integers-l-the-list-xrightsquigarrow-l-is-a-non-empty-sorted-list-of-integers`: 3. Prove that for all integers $x$ and sorted lists of integers $L$, the list $xrightsquigarrow L$ is a non-empty sorted list of integers.
+  Summary: **Solution.** We will prove this by induction on L . Let x be an arbitrary integer.
 - `document/cmsc-27200-spring-2022-exam`: cmsc 27200 spring 2022 exam
   Summary: # Final Exam **CMSC 27200** _March, 2022_ **Important notes:** - 24 hours from download to submission. Extra-time accommodations with the University are honored to the letter (please remind us, but you may submit the ordinary way on Gradescope).
 - `section/cmsc-27200-spring-2022-exam-1-final-exam`: Final Exam
@@ -33,20 +48,6 @@
   Summary: On a long stretch of semi-rural residential road, there are many houses but no stores to provide local service. Locals want access to Bookstores, Drugstores, and Grocery stores ( B,D,G ).
 - `section/cmsc-27200-spring-2022-exam-3-problem-1-25-points-stores-and-social-value`: Problem 1 (25 points). (Stores and social value)
   Summary: Prove correctness and efficiency. (You need not minimize the runtime or give the best-possible runtime bound for your algo, as long as you prove a poly-time upper bound.) Example: if n=4 and \[ S_1=\ B,G\ , S_2=\ B,D\ , S_3=\ B,D,G\ , S_4=\ B,G\ \] then the assignment \[ F=(s_1,s_2,s_3,s_4)=(B,D,G,B) \] is feasible and has social value 2+3+3+2 , which is clearly best-possible, since residents at each position have easy access to distinct store types at each position within th
-- `section/cmsc-27200-spring-2022-exam-4-problem-2-25-points-saturated-edges`: Problem 2 (25 points). (Saturated edges)
-  Summary: For both parts below we are given a directed graph G=(V,E) with distinguished source vertex s , sink vertex t , integer edge capacities c_e>0 for each e E , and a flow f=\ f(e)\ defined on edges. An edge is called saturated if f(e)=c_e .
-- `section/cmsc-27200-spring-2022-exam-5-problem-3-25-points-disconnecting-graphs`: Problem 3 (25 points). (Disconnecting graphs)
-  Summary: Consider the following problem, Disconnection: **Input:** an undirected, connected graph G . **Output:** the minimum value k such that there exist k edges whose removal disconnects the graph into two or more connected components.
-- `section/cmsc-27200-spring-2022-exam-6-problem-4-25-points-3-sat-with-restricted-variable-occurrences`: Problem 4 (25 points). (3-SAT with restricted variable occurrences)
-  Summary: Prove that the following special case of the 3-SAT (3-CNF satisfiability) problem, which we'll call 3-SAT(4), is NP-complete. **Input:** a collection of clauses C_1, ,C_m over Boolean variables x_1, ,x_n , where each clause C_j is an OR of at most 3 variables or negated variables, e.g.
-- `section/cmsc-27200-spring-2022-exam-7-problem-5-25-points-banquets`: Problem 5 (25 points). (Banquets)
-  Summary: Sometime in the not-too-distant future, friends gather for a banquet-style dinner at a large restaurant. There are n people and n dishes.
-- `document/cmsc-27200-win-2026-pset1-janos`: CMSC 27200 win 2026 pset1 janos
-  Summary: # Problem Set 1 **CMSC 27200: Theory of Algorithms** # Problem 1: Gale-Shapley and Stable Matchings (25 points, 5 extra credit points available) - (a) 15 points: Given the following preference lists, run the Gale-Shapley algorithm with group A making the offers to obtain a stable matching. Group A 's preference lists (from most preferred to least preferred): - a_1 : b_3 , b_2 , b_1 , b_4 - a_2 : b_1 , b_4 , b_3 , b_2 - a_3 : b_4 , b_1 , b_3 , b_2 - a_4 : b_1 , b_4 , b_2 , b_3
-- `section/cmsc-27200-win-2026-pset1-janos-1-problem-1-gale-shapley-and-stable-matchings-25-points-5-extra-credit-points-available`: Problem 1: Gale-Shapley and Stable Matchings (25 points, 5 extra credit points available)
-  Summary: - (a) 15 points: Given the following preference lists, run the Gale-Shapley algorithm with group A making the offers to obtain a stable matching. Group A 's preference lists (from most preferred to least preferred): - a_1 : b_3 , b_2 , b_1 , b_4 - a_2 : b_1 , b_4 , b_3 , b_2 - a_3 : b_4 , b_1 , b_3 , b_2 - a_4 : b_1 , b_4 , b_2 , b_3 Group B 's preference lists (from most preferred to least preferred): - b_1 : a_1 , a_3 , a_4 , a_2 - b_2 : a_3 , a_4 , a_2 , a_1 - b_3 : a_3 ,
-- `section/cmsc-27200-win-2026-pset1-janos-2-problem-1-gale-shapley-and-stable-matchings-25-points-5-extra-credit-points-available`: Problem 1: Gale-Shapley and Stable Matchings (25 points, 5 extra credit points available)
-  Summary: Which people are happier in this new stable matching (compared to the stable matching found in part a)? **Solution:** - b_1 makes offer to a_1 : accepted as a_1 is unmatched Current partial matching: (a_1,b_1) - b_2 makes offer to a_3 : accepted as a_3 is unmatched Current partial matching: (a_1,b_1) , (a_3,b_2) - b_3 makes offer to a_3 : accepted as a_3 prefers b_3 to b_2 Current partial matching: (a_1,b_1) , (a_3,b_3) - b_4 makes offer to a_1 : rejected as a_1 prefers b_1 t
 
 ## Warnings
 

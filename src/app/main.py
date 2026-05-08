@@ -113,7 +113,6 @@ MONOSPACE_FONT_FAMILY = (
 CHAT_COMPOSER_BOTTOM_OFFSET = "max(1rem, env(safe-area-inset-bottom))"
 CHAT_COMPOSER_MIN_HEIGHT = "3.5rem"
 CHAT_COMPOSER_CONTENT_PADDING = "6rem"
-CHAT_COMPOSER_MAX_WIDTH = "75rem"
 CONVERSATION_MEMORY_STATE_KEY = "conversation_memory"
 APPROX_MAX_CONTEXT_TOKENS = 200000
 APPROX_CONTEXT_COMPACTION_TOKENS = 140000
@@ -1026,12 +1025,9 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
     padding-bottom: {CHAT_COMPOSER_CONTENT_PADDING};
 }}
 
-/* Chat composer: fixed to viewport bottom, independent of chat scroll position. */
+/* Chat composer: sticky to viewport bottom while staying inside main layout width. */
 [data-testid="stChatInput"] {{
-    position: fixed;
-    left: 50%;
-    transform: translateX(-50%);
-    width: min(calc(100vw - 2rem), {CHAT_COMPOSER_MAX_WIDTH});
+    position: sticky;
     bottom: {CHAT_COMPOSER_BOTTOM_OFFSET};
     z-index: 20;
     padding-top: 0.25rem;
