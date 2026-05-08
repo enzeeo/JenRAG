@@ -2,6 +2,13 @@ import os
 import time
 
 import streamlit as st
+try:
+    from streamlit_agraph import Config, Edge, Node, agraph
+except ImportError:
+    Config = None
+    Edge = None
+    Node = None
+    agraph = None
 
 from src.app.github_uploads import GitHubUploadClient, GitHubUploadError
 from src.app.uploads import (
@@ -30,7 +37,10 @@ from src.pipeline.config import (
     WIKI_DB_PATH,
 )
 from src.pipeline.vectorstore import init_collection
-from src.wiki.query import wiki_database_exists
+from src.wiki.query import (
+    load_wiki_graph_neighborhood,
+    wiki_database_exists,
+)
 
 WORK_TYPE_OPTIONS = [
     "pset",
@@ -50,6 +60,13 @@ LATEX_UPLOAD_DIRECTORY = "data/latex"
 PDF_UPLOAD_DIRECTORY = "data/pdf"
 UNMATCHED_LATEX_UPLOAD_DIRECTORY = "data/unmatched-tex"
 UNMATCHED_PDF_UPLOAD_DIRECTORY = "data/unmatched-pdf"
+SIDEBAR_WIKI_GRAPH_STATE_KEY = "sidebar_wiki_graph"
+SIDEBAR_WIKI_GRAPH_SELECTION_KEY = "sidebar_wiki_graph_selection"
+SIDEBAR_WIKI_GRAPH_HEIGHT = 220
+SIDEBAR_WIKI_GRAPH_SEED_COLOR = "#7EB6FF"
+SIDEBAR_WIKI_GRAPH_RELATED_COLOR = "#4C566A"
+SIDEBAR_WIKI_GRAPH_EDGE_COLOR = "#8A93A2"
+SIDEBAR_WIKI_GRAPH_HIGHLIGHT_COLOR = "#F2CC8F"
 
 
 def get_missing_chat_configuration() -> list[str]:
@@ -168,6 +185,113 @@ def run_pipeline(query: str, use_reranker: bool, rerank_top_k: int) -> dict:
     return {"answer": answer, "retrieval": retrieval_result, "timings": timings}
 
 
+def build_sidebar_wiki_graph_payload(retrieval_result) -> dict[str, list[dict[str, object]]] | None:
+    """Build a compact sidebar graph payload from retrieved wiki page hits."""
+    matched_page_slugs = [
+        wiki_page_hit.slug
+        for wiki_page_hit in retrieval_result.wiki_page_hits
+        if wiki_page_hit.slug
+    ]
+    graph_nodes, graph_edges = load_wiki_graph_neighborhood(
+        matched_page_slugs,
+        database_path=WIKI_DB_PATH,
+    )
+    if not graph_nodes:
+        return None
+
+    return {
+        "nodes": [
+            {
+                "slug": graph_node.slug,
+                "title": graph_node.title,
+                "page_type": graph_node.page_type,
+                "is_seed": graph_node.is_seed,
+            }
+            for graph_node in graph_nodes
+        ],
+        "edges": [
+            {
+                "from_slug": graph_edge.from_slug,
+                "to_slug": graph_edge.to_slug,
+                "relation": graph_edge.relation,
+            }
+            for graph_edge in graph_edges
+        ],
+    }
+
+
+def render_sidebar_wiki_graph(wiki_database_available: bool) -> None:
+    """Render a small retrieval-driven wiki graph panel inside the sidebar."""
+    with st.container(border=True):
+        st.markdown("**Local Wiki Graph**")
+
+        if not wiki_database_available:
+            st.caption("Wiki graph unavailable.")
+            return
+
+        sidebar_wiki_graph_payload = st.session_state.get(
+            SIDEBAR_WIKI_GRAPH_STATE_KEY
+        )
+        if not sidebar_wiki_graph_payload:
+            st.caption("No wiki graph for this query yet.")
+            return
+
+        if not all([agraph, Node, Edge, Config]):
+            st.caption("Wiki graph dependency missing.")
+            return
+
+        graph_nodes = []
+        for graph_node_payload in sidebar_wiki_graph_payload["nodes"]:
+            node_color = (
+                SIDEBAR_WIKI_GRAPH_SEED_COLOR
+                if graph_node_payload["is_seed"]
+                else SIDEBAR_WIKI_GRAPH_RELATED_COLOR
+            )
+            graph_nodes.append(
+                Node(
+                    id=graph_node_payload["slug"],
+                    label=graph_node_payload["title"],
+                    title=(
+                        f"{graph_node_payload['title']} "
+                        f"[{graph_node_payload['page_type']}]"
+                    ),
+                    color=node_color,
+                    size=20 if graph_node_payload["is_seed"] else 14,
+                    shape="dot",
+                )
+            )
+
+        graph_edges = []
+        for graph_edge_payload in sidebar_wiki_graph_payload["edges"]:
+            graph_edges.append(
+                Edge(
+                    source=graph_edge_payload["from_slug"],
+                    target=graph_edge_payload["to_slug"],
+                    label=str(graph_edge_payload["relation"]).replace("_", " "),
+                    color=SIDEBAR_WIKI_GRAPH_EDGE_COLOR,
+                )
+            )
+
+        graph_config = Config(
+            width="100%",
+            height=SIDEBAR_WIKI_GRAPH_HEIGHT,
+            directed=False,
+            physics=True,
+            hierarchical=False,
+            collapsible=False,
+            staticGraph=False,
+            nodeHighlightBehavior=True,
+            highlightColor=SIDEBAR_WIKI_GRAPH_HIGHLIGHT_COLOR,
+        )
+        selected_node_slug = agraph(
+            nodes=graph_nodes,
+            edges=graph_edges,
+            config=graph_config,
+        )
+        if selected_node_slug:
+            st.session_state[SIDEBAR_WIKI_GRAPH_SELECTION_KEY] = selected_node_slug
+
+
 def render_sidebar() -> tuple[bool, int]:
     """Render chat controls shared across the app."""
     with st.sidebar:
@@ -176,6 +300,8 @@ def render_sidebar() -> tuple[bool, int]:
         rerank_top_k = st.slider("Chunks to keep after reranking", 3, 15, 5)
         if st.button("Clear Chat", use_container_width=True):
             st.session_state.messages = []
+            st.session_state.pop(SIDEBAR_WIKI_GRAPH_STATE_KEY, None)
+            st.session_state.pop(SIDEBAR_WIKI_GRAPH_SELECTION_KEY, None)
             st.rerun()
         st.divider()
         st.markdown("**Stack:** Embedding → ChromaDB → BGE Reranker → LLM")
@@ -183,8 +309,10 @@ def render_sidebar() -> tuple[bool, int]:
             "Uploads create GitHub pull requests. "
             "Merged files still need manual `ingest`, `build-wiki`, and artifact commits before search can use them."
         )
-        wiki_status = "available" if wiki_database_exists(WIKI_DB_PATH) else "missing"
+        wiki_database_available = wiki_database_exists(WIKI_DB_PATH)
+        wiki_status = "available" if wiki_database_available else "missing"
         st.caption(f"Wiki sidecar: {wiki_status}")
+        render_sidebar_wiki_graph(wiki_database_available)
 
     return use_reranker, rerank_top_k
 
@@ -250,6 +378,9 @@ def render_chat_tab(use_reranker: bool, rerank_top_k: int) -> None:
             st.exception(error)
             st.stop()
 
+        st.session_state[SIDEBAR_WIKI_GRAPH_STATE_KEY] = (
+            build_sidebar_wiki_graph_payload(result["retrieval"])
+        )
         st.markdown(result["answer"])
         render_retrieval_debug(result["retrieval"])
 

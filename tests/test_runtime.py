@@ -18,6 +18,29 @@ from src.pipeline.retriever import (
 from src.wiki.query import RelatedTopicMatch, WikiPageMatch
 
 
+def import_main_module():
+    os.environ["JENRAG_SKIP_STREAMLIT_BOOTSTRAP"] = "1"
+    try:
+        sys.modules.pop("src.app.main", None)
+        streamlit_stub = types.ModuleType("streamlit")
+        streamlit_stub.secrets = {}
+        streamlit_agraph_stub = types.ModuleType("streamlit_agraph")
+        streamlit_agraph_stub.agraph = lambda *args, **kwargs: None
+        streamlit_agraph_stub.Node = object
+        streamlit_agraph_stub.Edge = object
+        streamlit_agraph_stub.Config = object
+        with mock.patch.dict(
+            sys.modules,
+            {
+                "streamlit": streamlit_stub,
+                "streamlit_agraph": streamlit_agraph_stub,
+            },
+        ):
+            return importlib.import_module("src.app.main")
+    finally:
+        os.environ.pop("JENRAG_SKIP_STREAMLIT_BOOTSTRAP", None)
+
+
 class RetrievalRuntimeTests(unittest.TestCase):
     def test_retrieve_returns_chunk_wiki_and_related_topic_hits(self) -> None:
         fake_results = {
@@ -140,16 +163,7 @@ class RetrievalRuntimeTests(unittest.TestCase):
 
 class StreamlitDebugRenderingTests(unittest.TestCase):
     def test_render_retrieval_debug_renders_chunks_wiki_pages_and_related_topics(self) -> None:
-        os.environ["JENRAG_SKIP_STREAMLIT_BOOTSTRAP"] = "1"
-        try:
-            sys.modules.pop("src.app.main", None)
-            streamlit_stub = types.ModuleType("streamlit")
-            streamlit_stub.secrets = {}
-            with mock.patch.dict(sys.modules, {"streamlit": streamlit_stub}):
-                main_module = importlib.import_module("src.app.main")
-        finally:
-            os.environ.pop("JENRAG_SKIP_STREAMLIT_BOOTSTRAP", None)
-
+        main_module = import_main_module()
         fake_streamlit = FakeStreamlit()
         main_module.st = fake_streamlit
 
@@ -203,25 +217,149 @@ class StreamlitDebugRenderingTests(unittest.TestCase):
         self.assertTrue(any("max-flow" in text for text in fake_streamlit.markdown_calls))
 
 
+class StreamlitSidebarWikiGraphTests(unittest.TestCase):
+    def test_render_sidebar_shows_graph_panel_after_wiki_status(self) -> None:
+        main_module = import_main_module()
+        fake_streamlit = FakeStreamlit()
+        main_module.st = fake_streamlit
+
+        with mock.patch.object(main_module, "wiki_database_exists", return_value=True):
+            use_reranker, rerank_top_k = main_module.render_sidebar()
+
+        self.assertTrue(use_reranker)
+        self.assertEqual(rerank_top_k, 5)
+        wiki_status_index = fake_streamlit.call_log.index(
+            ("caption", "Wiki sidecar: available")
+        )
+        graph_title_index = fake_streamlit.call_log.index(
+            ("markdown", "**Local Wiki Graph**")
+        )
+        self.assertLess(wiki_status_index, graph_title_index)
+
+    def test_render_sidebar_shows_empty_state_without_graph_payload(self) -> None:
+        main_module = import_main_module()
+        fake_streamlit = FakeStreamlit()
+        main_module.st = fake_streamlit
+
+        with mock.patch.object(main_module, "wiki_database_exists", return_value=True):
+            main_module.render_sidebar()
+
+        self.assertIn(
+            "No wiki graph for this query yet.",
+            fake_streamlit.caption_calls,
+        )
+
+    def test_render_sidebar_uses_graph_renderer_for_cached_payload(self) -> None:
+        main_module = import_main_module()
+        fake_streamlit = FakeStreamlit()
+        fake_streamlit.session_state["sidebar_wiki_graph"] = {
+            "nodes": [
+                {
+                    "slug": "merge-sort",
+                    "title": "Merge Sort",
+                    "page_type": "concept",
+                    "is_seed": True,
+                },
+                {
+                    "slug": "master-theorem",
+                    "title": "Master Theorem",
+                    "page_type": "concept",
+                    "is_seed": False,
+                },
+            ],
+            "edges": [
+                {
+                    "from_slug": "merge-sort",
+                    "to_slug": "master-theorem",
+                    "relation": "related_topic",
+                }
+            ],
+        }
+        main_module.st = fake_streamlit
+        main_module.Node = FakeGraphNode
+        main_module.Edge = FakeGraphEdge
+        main_module.Config = FakeGraphConfig
+        main_module.agraph = mock.Mock(return_value="merge-sort")
+
+        with mock.patch.object(main_module, "wiki_database_exists", return_value=True):
+            main_module.render_sidebar()
+
+        main_module.agraph.assert_called_once()
+        graph_call = main_module.agraph.call_args.kwargs
+        self.assertEqual(len(graph_call["nodes"]), 2)
+        self.assertEqual(len(graph_call["edges"]), 1)
+
+
 class FakeStreamlit:
     def __init__(self) -> None:
+        self.sidebar = _FakeContextManager()
+        self.session_state: dict[str, object] = {}
+        self.call_log: list[tuple[str, object]] = []
+        self.header_calls: list[str] = []
         self.expander_labels: list[str] = []
         self.text_calls: list[str] = []
         self.markdown_calls: list[str] = []
         self.caption_calls: list[str] = []
+        self.container_calls: list[bool] = []
+
+    def header(self, value: str) -> None:
+        self.header_calls.append(value)
+        self.call_log.append(("header", value))
+
+    def toggle(self, label: str, value: bool = False) -> bool:
+        self.call_log.append(("toggle", label))
+        return value
+
+    def slider(self, label: str, minimum: int, maximum: int, value: int) -> int:
+        self.call_log.append(("slider", label))
+        return value
+
+    def button(self, label: str, use_container_width: bool = False) -> bool:
+        self.call_log.append(("button", label))
+        return False
+
+    def divider(self) -> None:
+        self.call_log.append(("divider", None))
 
     def expander(self, label: str):
         self.expander_labels.append(label)
+        self.call_log.append(("expander", label))
         return _FakeContextManager()
 
     def text(self, value: str) -> None:
         self.text_calls.append(value)
+        self.call_log.append(("text", value))
 
     def markdown(self, value: str) -> None:
         self.markdown_calls.append(value)
+        self.call_log.append(("markdown", value))
 
     def caption(self, value: str) -> None:
         self.caption_calls.append(value)
+        self.call_log.append(("caption", value))
+
+    def container(self, border: bool = False):
+        self.container_calls.append(border)
+        self.call_log.append(("container", border))
+        return _FakeContextManager()
+
+    def rerun(self) -> None:
+        self.call_log.append(("rerun", None))
+
+
+class FakeGraphNode:
+    def __init__(self, **kwargs) -> None:
+        self.kwargs = kwargs
+
+
+class FakeGraphEdge:
+    def __init__(self, **kwargs) -> None:
+        self.kwargs = kwargs
+
+
+class FakeGraphConfig:
+    def __init__(self, **kwargs) -> None:
+        self.kwargs = kwargs
 
 
 class _FakeContextManager:
