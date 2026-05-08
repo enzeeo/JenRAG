@@ -1025,12 +1025,25 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
     padding-bottom: {CHAT_COMPOSER_CONTENT_PADDING};
 }}
 
-[data-testid="stChatInput"] {{
-    position: sticky;
-    bottom: 0;
+[data-testid="stBottom"] {{
+    position: fixed !important;
+    bottom: 0 !important;
     z-index: 20;
-    padding-top: 0.25rem;
+}}
+
+[data-testid="stBottom"] > div {{
+    background: transparent;
+}}
+
+[data-testid="stBottomBlockContainer"] {{
     padding-bottom: {CHAT_COMPOSER_BOTTOM_OFFSET};
+}}
+
+[data-testid="stChatInput"] {{
+    position: relative;
+    z-index: 21;
+    padding-top: 0.25rem;
+    padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
     background: linear-gradient(
         to top,
         rgba(14, 22, 41, 0.98) 0%,
