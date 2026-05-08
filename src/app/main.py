@@ -1063,6 +1063,7 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
     const viewportMarginPixels = 16;
     const rootElement = document.documentElement;
     const layoutPollIntervalMilliseconds = 150;
+    const layoutFollowUpFrameCount = 8;
     const contentSelectors = [
         '[data-testid="stMain"]',
         '[data-testid="stMainBlockContainer"]',
@@ -1076,6 +1077,8 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
         '[aria-expanded="true"][data-testid*="Sidebar"]',
         '[data-testid*="sidebar"]',
     ];
+    const observedLayoutElements = new Set();
+    let layoutAnimationFrameToken = 0;
 
     function findContentElement() {{
         for (const selector of contentSelectors) {{
@@ -1122,6 +1125,45 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
         return furthestSidebarRight;
     }}
 
+    function collectObservableLayoutElements() {{
+        const layoutElements = [document.body];
+        const contentElement = findContentElement();
+
+        if (contentElement) {{
+            layoutElements.push(contentElement);
+        }}
+
+        for (const selector of sidebarSelectors) {{
+            const sidebarElements = document.querySelectorAll(selector);
+            for (const sidebarElement of sidebarElements) {{
+                layoutElements.push(sidebarElement);
+            }}
+        }}
+
+        return layoutElements;
+    }}
+
+    function syncObservedLayoutElements() {{
+        for (const observedLayoutElement of observedLayoutElements) {{
+            if (observedLayoutElement.isConnected) {{
+                continue;
+            }}
+
+            resizeObserver.unobserve(observedLayoutElement);
+            observedLayoutElements.delete(observedLayoutElement);
+        }}
+
+        const layoutElements = collectObservableLayoutElements();
+        for (const layoutElement of layoutElements) {{
+            if (observedLayoutElements.has(layoutElement)) {{
+                continue;
+            }}
+
+            resizeObserver.observe(layoutElement);
+            observedLayoutElements.add(layoutElement);
+        }}
+    }}
+
     function updateChatComposerLayout() {{
         const contentElement = findContentElement();
         if (!contentElement) {{
@@ -1152,39 +1194,68 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
         );
     }}
 
+    function scheduleLayoutFollowUpRefresh() {{
+        layoutAnimationFrameToken += 1;
+        const currentAnimationFrameToken = layoutAnimationFrameToken;
+        let remainingFrameCount = layoutFollowUpFrameCount;
+
+        function runFollowUpRefresh() {{
+            if (currentAnimationFrameToken !== layoutAnimationFrameToken) {{
+                return;
+            }}
+
+            syncObservedLayoutElements();
+            updateChatComposerLayout();
+            remainingFrameCount -= 1;
+
+            if (remainingFrameCount > 0) {{
+                window.requestAnimationFrame(runFollowUpRefresh);
+            }}
+        }}
+
+        window.requestAnimationFrame(runFollowUpRefresh);
+    }}
+
+    function refreshChatComposerLayout() {{
+        syncObservedLayoutElements();
+        updateChatComposerLayout();
+        scheduleLayoutFollowUpRefresh();
+    }}
+
     window.__jenragChatComposerCleanup?.();
 
     const resizeObserver = new ResizeObserver(() => {{
-        updateChatComposerLayout();
+        refreshChatComposerLayout();
     }});
 
     const mutationObserver = new MutationObserver(() => {{
-        updateChatComposerLayout();
+        refreshChatComposerLayout();
     }});
 
-    resizeObserver.observe(document.body);
-    for (const selector of sidebarSelectors) {{
-        const sidebarElements = document.querySelectorAll(selector);
-        for (const sidebarElement of sidebarElements) {{
-            resizeObserver.observe(sidebarElement);
-        }}
-    }}
     mutationObserver.observe(document.body, {{
         attributes: true,
         childList: true,
         subtree: true,
     }});
-    window.addEventListener("resize", updateChatComposerLayout);
+    const handleLayoutTransitionEnd = () => {{
+        refreshChatComposerLayout();
+    }};
+    syncObservedLayoutElements();
+    window.addEventListener("resize", refreshChatComposerLayout);
+    document.addEventListener("transitionend", handleLayoutTransitionEnd, true);
     const layoutPollIntervalId = window.setInterval(
-        updateChatComposerLayout,
+        refreshChatComposerLayout,
         layoutPollIntervalMilliseconds,
     );
-    updateChatComposerLayout();
+    refreshChatComposerLayout();
 
     window.__jenragChatComposerCleanup = () => {{
+        layoutAnimationFrameToken += 1;
         resizeObserver.disconnect();
         mutationObserver.disconnect();
-        window.removeEventListener("resize", updateChatComposerLayout);
+        observedLayoutElements.clear();
+        window.removeEventListener("resize", refreshChatComposerLayout);
+        document.removeEventListener("transitionend", handleLayoutTransitionEnd, true);
         window.clearInterval(layoutPollIntervalId);
     }};
 }})();

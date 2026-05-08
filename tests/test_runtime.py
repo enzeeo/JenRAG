@@ -595,7 +595,9 @@ class StreamlitDebugRenderingTests(unittest.TestCase):
         self.assertIn("ResizeObserver", injected_theme)
         self.assertIn("MutationObserver", injected_theme)
         self.assertIn("layoutPollIntervalMilliseconds = 150", injected_theme)
+        self.assertIn("layoutFollowUpFrameCount = 8", injected_theme)
         self.assertIn("window.setInterval", injected_theme)
+        self.assertIn("const observedLayoutElements = new Set()", injected_theme)
         self.assertIn("--jenrag-chat-composer-left", injected_theme)
         self.assertIn("--jenrag-chat-composer-width", injected_theme)
         self.assertIn('[data-testid="stMain"]', injected_theme)
@@ -606,6 +608,13 @@ class StreamlitDebugRenderingTests(unittest.TestCase):
         self.assertIn("furthestSidebarRight", injected_theme)
         self.assertIn("sidebarRect.right + viewportMarginPixels", injected_theme)
         self.assertIn("sidebarVisibleWidth > 48", injected_theme)
+        self.assertIn("function syncObservedLayoutElements()", injected_theme)
+        self.assertIn("resizeObserver.unobserve(observedLayoutElement)", injected_theme)
+        self.assertIn("resizeObserver.observe(layoutElement)", injected_theme)
+        self.assertIn("window.requestAnimationFrame(runFollowUpRefresh)", injected_theme)
+        self.assertIn("function refreshChatComposerLayout()", injected_theme)
+        self.assertIn('document.addEventListener("transitionend", handleLayoutTransitionEnd, true)', injected_theme)
+        self.assertIn('document.removeEventListener("transitionend", handleLayoutTransitionEnd, true)', injected_theme)
 
 
 class StreamlitSidebarWikiGraphTests(unittest.TestCase):
