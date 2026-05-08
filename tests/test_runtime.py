@@ -543,6 +543,46 @@ class StreamlitDebugRenderingTests(unittest.TestCase):
         )
         self.assertEqual(result["answer"], "Answer text")
 
+    def test_run_pipeline_falls_back_when_generate_rejects_memory_keyword(self) -> None:
+        main_module = import_main_module()
+        memory_state = main_module.build_initial_conversation_memory_state()
+        retrieval_result = RetrievalResult(chunk_hits=[], wiki_page_hits=[], related_topics=[])
+
+        def fake_generate(*args, **kwargs):
+            if "conversation_memory_context" in kwargs:
+                raise TypeError(
+                    "generate() got an unexpected keyword argument 'conversation_memory_context'"
+                )
+            return "Fallback answer"
+
+        with (
+            mock.patch.object(main_module, "retrieve", return_value=retrieval_result),
+            mock.patch.object(main_module, "generate", side_effect=fake_generate) as generate_mock,
+        ):
+            result = main_module.run_pipeline(
+                "Explain max flow.",
+                memory_state,
+                use_reranker=True,
+                rerank_top_k=5,
+            )
+
+        self.assertEqual(generate_mock.call_count, 2)
+        self.assertEqual(result["answer"], "Fallback answer")
+
+    def test_inject_application_theme_includes_bottom_chat_composer_rules(self) -> None:
+        main_module = import_main_module()
+        fake_streamlit = FakeStreamlit()
+        main_module.st = fake_streamlit
+
+        main_module.inject_application_theme()
+
+        injected_theme = "".join(fake_streamlit.markdown_calls)
+        self.assertIn('[data-testid="stAppViewBlockContainer"]', injected_theme)
+        self.assertIn("padding-bottom: 7rem", injected_theme)
+        self.assertIn('[data-testid="stChatInput"]', injected_theme)
+        self.assertIn("position: sticky", injected_theme)
+        self.assertIn("env(safe-area-inset-bottom)", injected_theme)
+
 
 class StreamlitSidebarWikiGraphTests(unittest.TestCase):
     def test_build_sidebar_wiki_graph_payload_returns_none_without_graph_loader(self) -> None:
@@ -731,6 +771,39 @@ class StreamlitSidebarWikiGraphTests(unittest.TestCase):
         )
         self.assertIn(("rerun", None), fake_streamlit.call_log)
 
+    def test_render_chat_tab_renders_existing_messages_before_chat_input(self) -> None:
+        main_module = import_main_module()
+        fake_streamlit = FakeStreamlit()
+        fake_streamlit.session_state["messages"] = [
+            {"role": "user", "content": "First question."},
+            {"role": "assistant", "content": "First answer."},
+        ]
+        main_module.st = fake_streamlit
+
+        with mock.patch.object(main_module, "render_assistant_message_content") as render_mock:
+            main_module.render_chat_tab(use_reranker=True, rerank_top_k=5)
+
+        self.assertEqual(
+            fake_streamlit.call_log.count(
+                (
+                    "chat_input",
+                    "Ask about homework, exam problems, solutions, notes, and concepts...",
+                )
+            ),
+            1,
+        )
+        first_user_message_index = fake_streamlit.call_log.index(("chat_message", "user"))
+        assistant_message_index = fake_streamlit.call_log.index(("chat_message", "assistant"))
+        chat_input_index = fake_streamlit.call_log.index(
+            (
+                "chat_input",
+                "Ask about homework, exam problems, solutions, notes, and concepts...",
+            )
+        )
+        self.assertLess(first_user_message_index, chat_input_index)
+        self.assertLess(assistant_message_index, chat_input_index)
+        render_mock.assert_called_once_with("First answer.")
+
     def test_render_sidebar_clear_chat_resets_messages_and_memory(self) -> None:
         main_module = import_main_module()
         fake_streamlit = FakeStreamlit()
@@ -809,7 +882,7 @@ class FakeStreamlit:
         self.text_calls.append(value)
         self.call_log.append(("text", value))
 
-    def markdown(self, value: str) -> None:
+    def markdown(self, value: str, **kwargs) -> None:
         self.markdown_calls.append(value)
         self.call_log.append(("markdown", value))
 

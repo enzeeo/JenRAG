@@ -107,6 +107,9 @@ APP_BACKGROUND_COLOR = "#0e1629"
 MONOSPACE_FONT_FAMILY = (
     "'SFMono-Regular', 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace"
 )
+CHAT_COMPOSER_BOTTOM_OFFSET = "max(1rem, env(safe-area-inset-bottom))"
+CHAT_COMPOSER_MIN_HEIGHT = "4.5rem"
+CHAT_COMPOSER_CONTENT_PADDING = "7rem"
 CONVERSATION_MEMORY_STATE_KEY = "conversation_memory"
 APPROX_MAX_CONTEXT_TOKENS = 200000
 APPROX_CONTEXT_COMPACTION_TOKENS = 140000
@@ -1013,6 +1016,34 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
         transform: translateX(-50%);
     }}
 }}
+
+/* Chat composer: keep question box reachable at viewport bottom. */
+[data-testid="stAppViewBlockContainer"] {{
+    padding-bottom: {CHAT_COMPOSER_CONTENT_PADDING};
+}}
+
+/* Chat composer: sticky layout avoids scroll-back-to-input in long chats. */
+[data-testid="stChatInput"] {{
+    position: sticky;
+    bottom: {CHAT_COMPOSER_BOTTOM_OFFSET};
+    z-index: 20;
+    padding-top: 0.75rem;
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    background: linear-gradient(
+        to top,
+        rgba(14, 22, 41, 0.98) 0%,
+        rgba(14, 22, 41, 0.92) 72%,
+        rgba(14, 22, 41, 0) 100%
+    );
+}}
+
+[data-testid="stChatInput"] > div {{
+    background: {APP_BACKGROUND_COLOR};
+    border: 1px solid {PRIMARY_BLUE_COLOR};
+    border-radius: 0.75rem;
+    box-shadow: 0 0 0 1px rgba(184, 196, 255, 0.12);
+    min-height: {CHAT_COMPOSER_MIN_HEIGHT};
+}}
 </style>"""
     )
 
@@ -1222,11 +1253,16 @@ def run_pipeline(
         conversation_memory_state,
         query_resolution,
     )
-    answer = generate(
-        query,
-        retrieval_result,
-        conversation_memory_context=conversation_memory_prompt_context,
-    )
+    try:
+        answer = generate(
+            query,
+            retrieval_result,
+            conversation_memory_context=conversation_memory_prompt_context,
+        )
+    except TypeError as error:
+        if "conversation_memory_context" not in str(error):
+            raise
+        answer = generate(query, retrieval_result)
     timings["generation"] = time.time() - generation_start_time
 
     timings["total"] = timings["retrieval"] + timings["generation"]
@@ -1448,7 +1484,6 @@ def render_retrieval_debug(retrieval_result) -> None:
 
 def render_chat_tab(use_reranker: bool, rerank_top_k: int) -> None:
     """Render the existing chat interface."""
-    query = st.chat_input("Ask about homework, exam problems, solutions, notes, and concepts...")
     conversation_memory_state = get_conversation_memory_state()
 
     if "messages" not in st.session_state:
@@ -1468,6 +1503,7 @@ def render_chat_tab(use_reranker: bool, rerank_top_k: int) -> None:
                 columns[1].metric("Generation", f"{message['timings']['generation']:.1f}s")
                 columns[2].metric("Total", f"{message['timings']['total']:.1f}s")
 
+    query = st.chat_input("Ask about homework, exam problems, solutions, notes, and concepts...")
     if not query:
         return
 
