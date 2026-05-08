@@ -111,8 +111,9 @@ MONOSPACE_FONT_FAMILY = (
     "'SFMono-Regular', 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace"
 )
 CHAT_COMPOSER_BOTTOM_OFFSET = "max(1rem, env(safe-area-inset-bottom))"
-CHAT_COMPOSER_MIN_HEIGHT = "4.5rem"
-CHAT_COMPOSER_CONTENT_PADDING = "7rem"
+CHAT_COMPOSER_MIN_HEIGHT = "3.5rem"
+CHAT_COMPOSER_CONTENT_PADDING = "6rem"
+CHAT_COMPOSER_MAX_WIDTH = "75rem"
 CONVERSATION_MEMORY_STATE_KEY = "conversation_memory"
 APPROX_MAX_CONTEXT_TOKENS = 200000
 APPROX_CONTEXT_COMPACTION_TOKENS = 140000
@@ -1020,18 +1021,21 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
     }}
 }}
 
-/* Chat composer: keep question box reachable at viewport bottom. */
+/* Chat composer: reserve room so newest message stays visible above fixed input. */
 [data-testid="stAppViewBlockContainer"] {{
     padding-bottom: {CHAT_COMPOSER_CONTENT_PADDING};
 }}
 
-/* Chat composer: sticky layout avoids scroll-back-to-input in long chats. */
+/* Chat composer: fixed to viewport bottom, independent of chat scroll position. */
 [data-testid="stChatInput"] {{
-    position: sticky;
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(calc(100vw - 2rem), {CHAT_COMPOSER_MAX_WIDTH});
     bottom: {CHAT_COMPOSER_BOTTOM_OFFSET};
     z-index: 20;
-    padding-top: 0.75rem;
-    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    padding-top: 0.25rem;
+    padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
     background: linear-gradient(
         to top,
         rgba(14, 22, 41, 0.98) 0%,
@@ -1046,6 +1050,12 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
     border-radius: 0.75rem;
     box-shadow: 0 0 0 1px rgba(184, 196, 255, 0.12);
     min-height: {CHAT_COMPOSER_MIN_HEIGHT};
+}}
+
+[data-testid="stChatInput"] textarea {{
+    min-height: 1.5rem;
+    padding-top: 0.65rem;
+    padding-bottom: 0.65rem;
 }}
 </style>"""
     )
