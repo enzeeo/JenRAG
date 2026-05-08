@@ -1026,19 +1026,19 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
 }}
 
 /* Pin Streamlit's bottom container so the composer stays visible while preserving layout width. */
-[data-testid="stBottom"] {{
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 20;
+.stBottom[data-testid="stBottom"] {{
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 20 !important;
 }}
 
-[data-testid="stBottom"] > div {{
+.stBottom[data-testid="stBottom"] > div {{
     background: transparent;
 }}
 
-[data-testid="stBottomBlockContainer"] {{
+.stBottom [data-testid="stBottomBlockContainer"] {{
     padding-bottom: {CHAT_COMPOSER_BOTTOM_OFFSET};
 }}
 
