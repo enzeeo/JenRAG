@@ -100,8 +100,9 @@ INLINE_MATH_DELIMITER = "$"
 DISPLAY_MATH_DELIMITER = "$$"
 PRIMARY_BLUE_COLOR = "#b8c4ff"
 SIDEBAR_TEXT_COLOR = "#b8c4ff"
-DARK_BLUE_ACCENT_COLOR = "#00288e"
-SIDEBAR_BACKGROUND_COLOR = "#1e40af"
+DARK_BLUE_ACCENT_COLOR = "#b8c4ff"
+SIDEBAR_BACKGROUND_COLOR = "#1c2638"
+APP_BACKGROUND_COLOR = "#0e1629"
 MONOSPACE_FONT_FAMILY = (
     "'SFMono-Regular', 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace"
 )
@@ -244,7 +245,7 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
 
 [data-testid="stAppViewContainer"] {{
     color: {PRIMARY_BLUE_COLOR};
-    background: white;
+    background: {APP_BACKGROUND_COLOR};
 }}
 
 [data-testid="stAppViewContainer"] h1,
@@ -305,12 +306,12 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
 
 .jenrag-caption-ticker::before {{
     left: 0;
-    background: linear-gradient(to right, white 20%, transparent);
+    background: linear-gradient(to right, {APP_BACKGROUND_COLOR} 20%, transparent);
 }}
 
 .jenrag-caption-ticker::after {{
     right: 0;
-    background: linear-gradient(to left, white 20%, transparent);
+    background: linear-gradient(to left, {APP_BACKGROUND_COLOR} 20%, transparent);
 }}
 
 .jenrag-caption-track {{
