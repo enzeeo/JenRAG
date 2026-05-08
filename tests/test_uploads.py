@@ -6,7 +6,9 @@ from src.app.uploads import (
     build_markdown_target_path,
     build_raw_target_path,
     build_target_path,
+    derive_upload_form_defaults_from_file_name,
     normalize_upload_metadata,
+    normalize_submitter_name,
     validate_uploaded_file,
 )
 
@@ -18,15 +20,15 @@ class UploadHelpersTests(unittest.TestCase):
             course_number="27100",
             quarter="fall",
             year="2025",
-            work_type="pset",
+            work_type="hw",
             work_number="1",
             custom_work_type="",
             professor_last_name="Ng",
-            submitter_email="student@example.edu",
+            submitter_name="Student Name",
             submission_note="",
         )
 
-        self.assertEqual(build_filename_stem(metadata), "cmsc_27100_fall_2025_pset1_ng")
+        self.assertEqual(build_filename_stem(metadata), "cmsc_27100_fall_2025_hw1_ng")
 
     def test_custom_work_type_is_normalized_to_lowercase_alphanumeric(self) -> None:
         metadata = normalize_upload_metadata(
@@ -38,11 +40,14 @@ class UploadHelpersTests(unittest.TestCase):
             work_number="99",
             custom_work_type="Take Home Exam 2",
             professor_last_name="Smith-Jones",
-            submitter_email="student@example.edu",
+            submitter_name="Student Name",
             submission_note="",
         )
 
-        self.assertEqual(build_filename_stem(metadata), "stat_25100_win_2026_takehomeexam2_smith-jones")
+        self.assertEqual(
+            build_filename_stem(metadata),
+            "stat_25100_win_2026_takehomeexam2_smith-jones",
+        )
 
     def test_lecture_work_type_supports_numbered_filename_stem(self) -> None:
         metadata = normalize_upload_metadata(
@@ -54,7 +59,7 @@ class UploadHelpersTests(unittest.TestCase):
             work_number="2",
             custom_work_type="",
             professor_last_name="Ng",
-            submitter_email="student@example.edu",
+            submitter_name="Student Name",
             submission_note="",
         )
 
@@ -70,7 +75,7 @@ class UploadHelpersTests(unittest.TestCase):
             work_number="1",
             custom_work_type="",
             professor_last_name="Janos",
-            submitter_email="student@example.edu",
+            submitter_name="Student Name",
             submission_note="",
         )
 
@@ -81,7 +86,9 @@ class UploadHelpersTests(unittest.TestCase):
             "data/latex/math_20400/math_20400_win_2026_hw1_janos.tex",
         )
 
-    def test_raw_target_path_uses_unmatched_latex_tree_without_matching_markdown(self) -> None:
+    def test_raw_target_path_uses_unmatched_latex_tree_without_matching_markdown(
+        self,
+    ) -> None:
         metadata = normalize_upload_metadata(
             course_category="MATH",
             course_number="20400",
@@ -91,11 +98,15 @@ class UploadHelpersTests(unittest.TestCase):
             work_number="1",
             custom_work_type="",
             professor_last_name="Janos",
-            submitter_email="student@example.edu",
+            submitter_name="Student Name",
             submission_note="",
         )
 
-        target_path = build_raw_target_path(metadata, ".tex", matching_markdown_exists=False)
+        target_path = build_raw_target_path(
+            metadata,
+            ".tex",
+            matching_markdown_exists=False,
+        )
 
         self.assertEqual(
             target_path,
@@ -112,7 +123,7 @@ class UploadHelpersTests(unittest.TestCase):
             work_number="1",
             custom_work_type="",
             professor_last_name="Janos",
-            submitter_email="student@example.edu",
+            submitter_name="Student Name",
             submission_note="",
         )
 
@@ -123,7 +134,9 @@ class UploadHelpersTests(unittest.TestCase):
             "data/pdf/math_20400/math_20400_win_2026_hw1_janos.pdf",
         )
 
-    def test_raw_target_path_uses_unmatched_pdf_tree_without_matching_markdown(self) -> None:
+    def test_raw_target_path_uses_unmatched_pdf_tree_without_matching_markdown(
+        self,
+    ) -> None:
         metadata = normalize_upload_metadata(
             course_category="MATH",
             course_number="20400",
@@ -133,11 +146,15 @@ class UploadHelpersTests(unittest.TestCase):
             work_number="1",
             custom_work_type="",
             professor_last_name="Janos",
-            submitter_email="student@example.edu",
+            submitter_name="Student Name",
             submission_note="",
         )
 
-        target_path = build_raw_target_path(metadata, ".pdf", matching_markdown_exists=False)
+        target_path = build_raw_target_path(
+            metadata,
+            ".pdf",
+            matching_markdown_exists=False,
+        )
 
         self.assertEqual(
             target_path,
@@ -154,7 +171,7 @@ class UploadHelpersTests(unittest.TestCase):
             work_number="1",
             custom_work_type="",
             professor_last_name="Janos",
-            submitter_email="student@example.edu",
+            submitter_name="Student Name",
             submission_note="",
         )
 
@@ -175,13 +192,81 @@ class UploadHelpersTests(unittest.TestCase):
             work_number="1",
             custom_work_type="",
             professor_last_name="Janos",
-            submitter_email="student@example.edu",
+            submitter_name="Student Name",
             submission_note="",
         )
 
         self.assertEqual(
             build_markdown_target_path(metadata),
             "data/md/math_20400/math_20400_win_2026_hw1_janos.md",
+        )
+
+    def test_normalize_submitter_name_trims_whitespace(self) -> None:
+        self.assertEqual(normalize_submitter_name("  Jane Doe  "), "Jane Doe")
+
+    def test_normalize_submitter_name_requires_non_empty_value(self) -> None:
+        with self.assertRaises(UploadValidationError):
+            normalize_submitter_name("   ")
+
+    def test_normalize_upload_metadata_rejects_manual_pset_work_type(self) -> None:
+        with self.assertRaises(UploadValidationError):
+            normalize_upload_metadata(
+                course_category="CMSC",
+                course_number="27100",
+                quarter="fall",
+                year="2025",
+                work_type="pset",
+                work_number="1",
+                custom_work_type="",
+                professor_last_name="Ng",
+                submitter_name="Student Name",
+                submission_note="",
+            )
+
+    def test_derive_upload_form_defaults_reads_canonical_hw_filename(self) -> None:
+        upload_form_defaults = derive_upload_form_defaults_from_file_name(
+            "cmsc_27100_fall_2025_hw1_ng.pdf"
+        )
+
+        assert upload_form_defaults is not None
+        self.assertEqual(upload_form_defaults.course_category, "cmsc")
+        self.assertEqual(upload_form_defaults.course_number, "27100")
+        self.assertEqual(upload_form_defaults.quarter, "fall")
+        self.assertEqual(upload_form_defaults.year, 2025)
+        self.assertEqual(upload_form_defaults.work_type, "hw")
+        self.assertEqual(upload_form_defaults.work_number, "1")
+        self.assertEqual(upload_form_defaults.custom_work_type, "")
+        self.assertEqual(upload_form_defaults.professor_last_name, "ng")
+
+    def test_derive_upload_form_defaults_maps_pset_filename_to_hw(self) -> None:
+        upload_form_defaults = derive_upload_form_defaults_from_file_name(
+            "cmsc_27100_fall_2025_pset3_ng.tex"
+        )
+
+        assert upload_form_defaults is not None
+        self.assertEqual(upload_form_defaults.work_type, "hw")
+        self.assertEqual(upload_form_defaults.work_number, "3")
+
+    def test_derive_upload_form_defaults_maps_custom_segment_to_custom_work_type(
+        self,
+    ) -> None:
+        upload_form_defaults = derive_upload_form_defaults_from_file_name(
+            "stat_25100_win_2026_takehomeexam2_smith-jones.md"
+        )
+
+        assert upload_form_defaults is not None
+        self.assertEqual(upload_form_defaults.work_type, "custom")
+        self.assertEqual(upload_form_defaults.work_number, "")
+        self.assertEqual(
+            upload_form_defaults.custom_work_type,
+            "takehomeexam2",
+        )
+
+    def test_derive_upload_form_defaults_returns_none_for_non_canonical_filename(
+        self,
+    ) -> None:
+        self.assertIsNone(
+            derive_upload_form_defaults_from_file_name("assignment-draft.pdf")
         )
 
     def test_validate_uploaded_file_accepts_valid_tex_content(self) -> None:
@@ -200,7 +285,10 @@ class UploadHelpersTests(unittest.TestCase):
         )
 
         self.assertEqual(validated_upload.extension, ".md")
-        self.assertEqual(validated_upload.file_bytes, b"# Problem Set 1\n\nSolution notes")
+        self.assertEqual(
+            validated_upload.file_bytes,
+            b"# Problem Set 1\n\nSolution notes",
+        )
 
     def test_validate_uploaded_file_rejects_empty_markdown_file(self) -> None:
         with self.assertRaises(UploadValidationError):
@@ -237,11 +325,11 @@ class UploadHelpersTests(unittest.TestCase):
                 course_number="27100",
                 quarter="fall",
                 year="2025",
-                work_type="pset",
+                work_type="hw",
                 work_number="1",
                 custom_work_type="",
                 professor_last_name="Ng 3",
-                submitter_email="student@example.edu",
+                submitter_name="Student Name",
                 submission_note="",
             )
 

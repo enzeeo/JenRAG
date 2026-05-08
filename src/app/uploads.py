@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from pathlib import Path
 import re
+
+from src.pipeline.corpus import parse_structured_filename
 
 
 MARKDOWN_UPLOAD_DIRECTORY = "data/md"
@@ -17,7 +20,6 @@ MIN_YEAR = 2000
 MAX_YEAR = 2100
 VALID_QUARTERS = {"fall", "win", "spring"}
 PRESET_WORK_TYPES = {
-    "pset",
     "hw",
     "midterm",
     "final",
@@ -27,7 +29,6 @@ PRESET_WORK_TYPES = {
     "lec",
     "custom",
 }
-EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 PROFESSOR_LAST_NAME_PATTERN = re.compile(r"^[a-z]+(?:-[a-z]+)*$")
 COURSE_CATEGORY_PATTERN = re.compile(r"^[A-Za-z]+$")
 COURSE_NUMBER_PATTERN = re.compile(r"^\d{5}$")
@@ -46,7 +47,7 @@ class UploadMetadata:
     year: int
     work_segment: str
     professor_last_name: str
-    submitter_email: str
+    submitter_name: str
     submission_note: str
 
 
@@ -55,6 +56,18 @@ class ValidatedUploadedFile:
     file_name: str
     extension: str
     file_bytes: bytes
+
+
+@dataclass(frozen=True)
+class UploadFormDefaults:
+    course_category: str
+    course_number: str
+    quarter: str
+    year: int
+    work_type: str
+    work_number: str
+    custom_work_type: str
+    professor_last_name: str
 
 
 def normalize_upload_metadata(
@@ -66,7 +79,7 @@ def normalize_upload_metadata(
     work_number: str,
     custom_work_type: str,
     professor_last_name: str,
-    submitter_email: str,
+    submitter_name: str,
     submission_note: str,
 ) -> UploadMetadata:
     """Validate and normalize all metadata fields for a new upload."""
@@ -80,7 +93,7 @@ def normalize_upload_metadata(
         custom_work_type=custom_work_type,
     )
     normalized_professor_last_name = normalize_professor_last_name(professor_last_name)
-    normalized_submitter_email = normalize_submitter_email(submitter_email)
+    normalized_submitter_name = normalize_submitter_name(submitter_name)
     normalized_submission_note = submission_note.strip()
 
     return UploadMetadata(
@@ -90,7 +103,7 @@ def normalize_upload_metadata(
         year=normalized_year,
         work_segment=normalized_work_segment,
         professor_last_name=normalized_professor_last_name,
-        submitter_email=normalized_submitter_email,
+        submitter_name=normalized_submitter_name,
         submission_note=normalized_submission_note,
     )
 
@@ -140,7 +153,7 @@ def normalize_work_segment(
     work_number: str,
     custom_work_type: str,
 ) -> str:
-    """Build a normalized work segment like 'pset1' or 'midterm'."""
+    """Build a normalized work segment like 'hw1' or 'midterm'."""
     normalized_work_type = work_type.strip().lower()
     if normalized_work_type not in PRESET_WORK_TYPES:
         raise UploadValidationError("Work type is not supported.")
@@ -173,14 +186,78 @@ def normalize_professor_last_name(professor_last_name: str) -> str:
     return normalized_professor_last_name
 
 
-def normalize_submitter_email(submitter_email: str) -> str:
-    """Return a normalized submitter email address."""
-    normalized_submitter_email = submitter_email.strip().lower()
-    if not normalized_submitter_email:
-        raise UploadValidationError("Submitter email is required.")
-    if not EMAIL_PATTERN.fullmatch(normalized_submitter_email):
-        raise UploadValidationError("Submitter email is not valid.")
-    return normalized_submitter_email
+def normalize_submitter_name(submitter_name: str) -> str:
+    """Return a required submitter name string."""
+    normalized_submitter_name = submitter_name.strip()
+    if not normalized_submitter_name:
+        raise UploadValidationError("Submitter name is required.")
+    return normalized_submitter_name
+
+
+def derive_upload_form_defaults_from_file_name(
+    file_name: str,
+) -> UploadFormDefaults | None:
+    """Parse canonical upload file names into editable form defaults."""
+    file_stem = Path(file_name.strip()).stem
+    if not file_stem:
+        return None
+
+    parsed_metadata = parse_structured_filename(file_stem)
+    if not parsed_metadata:
+        return None
+
+    parsed_work_segment = parsed_metadata.get("work_segment", "")
+    parsed_work_type = parsed_metadata.get("work_type", "")
+    parsed_work_number = parsed_metadata.get("work_number", "")
+
+    form_work_type = parsed_work_type
+    form_work_number = parsed_work_number
+    form_custom_work_type = ""
+
+    if parsed_work_type == "pset":
+        form_work_type = "hw"
+    elif parsed_work_type not in PRESET_WORK_TYPES:
+        form_work_type = "custom"
+        form_work_number = ""
+        form_custom_work_type = parsed_work_segment
+
+    try:
+        normalized_course_category = normalize_course_category(
+            parsed_metadata["course_category"]
+        )
+        normalized_course_number = normalize_course_number(
+            parsed_metadata["course_number"]
+        )
+        normalized_quarter = normalize_quarter(parsed_metadata["quarter"])
+        normalized_year = normalize_year(parsed_metadata["year"])
+        normalized_professor_last_name = normalize_professor_last_name(
+            parsed_metadata["author"]
+        )
+        normalized_work_segment = normalize_work_segment(
+            work_type=form_work_type,
+            work_number=form_work_number,
+            custom_work_type=form_custom_work_type,
+        )
+    except (KeyError, UploadValidationError):
+        return None
+
+    normalized_work_type = form_work_type
+    normalized_work_number = form_work_number
+    normalized_custom_work_type = form_custom_work_type
+    if normalized_work_type == "custom":
+        normalized_custom_work_type = normalized_work_segment
+        normalized_work_number = ""
+
+    return UploadFormDefaults(
+        course_category=normalized_course_category,
+        course_number=normalized_course_number,
+        quarter=normalized_quarter,
+        year=normalized_year,
+        work_type=normalized_work_type,
+        work_number=normalized_work_number,
+        custom_work_type=normalized_custom_work_type,
+        professor_last_name=normalized_professor_last_name,
+    )
 
 
 def build_course_folder(upload_metadata: UploadMetadata) -> str:

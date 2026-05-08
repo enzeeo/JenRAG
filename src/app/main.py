@@ -22,11 +22,13 @@ from src.app.github_uploads import GitHubUploadClient, GitHubUploadError
 from src.app.uploads import (
     PRESET_WORK_TYPES,
     UploadMetadata,
+    UploadFormDefaults,
     UploadValidationError,
     ValidatedUploadedFile,
     build_filename_stem,
     build_target_path,
     build_upload_branch_name,
+    derive_upload_form_defaults_from_file_name,
     normalize_upload_metadata,
     validate_uploaded_file,
 )
@@ -55,7 +57,6 @@ load_wiki_graph_neighborhood = getattr(
 wiki_database_exists = wiki_query_module.wiki_database_exists
 
 WORK_TYPE_OPTIONS = [
-    "pset",
     "hw",
     "midterm",
     "final",
@@ -82,6 +83,18 @@ SIDEBAR_WIKI_GRAPH_HIGHLIGHT_COLOR = "#F2CC8F"
 SIDEBAR_WIKI_GRAPH_NODE_SPACING = 220
 SIDEBAR_WIKI_GRAPH_SPRING_LENGTH = 180
 SIDEBAR_WIKI_GRAPH_SPRING_STRENGTH = 0.04
+UPLOAD_FILE_KEY = "upload_file"
+UPLOAD_FILE_SIGNATURE_KEY = "upload_file_signature"
+UPLOAD_COURSE_CATEGORY_KEY = "upload_course_category"
+UPLOAD_COURSE_NUMBER_KEY = "upload_course_number"
+UPLOAD_QUARTER_KEY = "upload_quarter"
+UPLOAD_YEAR_KEY = "upload_year"
+UPLOAD_WORK_TYPE_KEY = "upload_work_type"
+UPLOAD_WORK_NUMBER_KEY = "upload_work_number"
+UPLOAD_CUSTOM_WORK_TYPE_KEY = "upload_custom_work_type"
+UPLOAD_PROFESSOR_LAST_NAME_KEY = "upload_professor_last_name"
+UPLOAD_SUBMITTER_NAME_KEY = "upload_submitter_name"
+UPLOAD_SUBMISSION_NOTE_KEY = "upload_submission_note"
 INLINE_MATH_DELIMITER = "$"
 DISPLAY_MATH_DELIMITER = "$$"
 
@@ -246,6 +259,46 @@ def get_missing_upload_configuration() -> list[str]:
         if not setting_value:
             missing_settings.append(setting_name)
     return missing_settings
+
+
+def initialize_upload_form_state() -> None:
+    """Seed upload form session state once so fields remain editable."""
+    upload_form_defaults = {
+        UPLOAD_COURSE_CATEGORY_KEY: "",
+        UPLOAD_COURSE_NUMBER_KEY: "",
+        UPLOAD_QUARTER_KEY: QUARTER_OPTIONS[0],
+        UPLOAD_YEAR_KEY: 2026,
+        UPLOAD_WORK_TYPE_KEY: WORK_TYPE_OPTIONS[0],
+        UPLOAD_WORK_NUMBER_KEY: "",
+        UPLOAD_CUSTOM_WORK_TYPE_KEY: "",
+        UPLOAD_PROFESSOR_LAST_NAME_KEY: "",
+        UPLOAD_SUBMITTER_NAME_KEY: "",
+        UPLOAD_SUBMISSION_NOTE_KEY: "",
+        UPLOAD_FILE_SIGNATURE_KEY: "",
+    }
+    for state_key, default_value in upload_form_defaults.items():
+        st.session_state.setdefault(state_key, default_value)
+
+
+def build_uploaded_file_signature(uploaded_file: ValidatedUploadedFile) -> str:
+    """Return stable signature for upload auto-fill tracking."""
+    return f"{uploaded_file.file_name}:{len(uploaded_file.file_bytes)}"
+
+
+def apply_upload_form_defaults(upload_form_defaults: UploadFormDefaults) -> None:
+    """Write parsed upload defaults into editable form state."""
+    st.session_state[UPLOAD_COURSE_CATEGORY_KEY] = upload_form_defaults.course_category
+    st.session_state[UPLOAD_COURSE_NUMBER_KEY] = upload_form_defaults.course_number
+    st.session_state[UPLOAD_QUARTER_KEY] = upload_form_defaults.quarter
+    st.session_state[UPLOAD_YEAR_KEY] = upload_form_defaults.year
+    st.session_state[UPLOAD_WORK_TYPE_KEY] = upload_form_defaults.work_type
+    st.session_state[UPLOAD_WORK_NUMBER_KEY] = upload_form_defaults.work_number
+    st.session_state[UPLOAD_CUSTOM_WORK_TYPE_KEY] = (
+        upload_form_defaults.custom_work_type
+    )
+    st.session_state[UPLOAD_PROFESSOR_LAST_NAME_KEY] = (
+        upload_form_defaults.professor_last_name
+    )
 
 
 def validate_chat_runtime_state() -> list[str]:
@@ -550,58 +603,99 @@ def render_upload_tab() -> None:
         )
         return
 
+    initialize_upload_form_state()
+
     uploaded_file = st.file_uploader(
         "File",
         type=["md", "tex", "pdf"],
         help="Accepted types: .md, .tex, .pdf",
+        key=UPLOAD_FILE_KEY,
     )
 
-    metadata_column_left, metadata_column_right = st.columns(2)
-    with metadata_column_left:
-        course_category = st.text_input("Course category", placeholder="CMSC")
-        course_number = st.text_input("Course number", placeholder="27100")
-        quarter = st.selectbox("Quarter", options=QUARTER_OPTIONS)
-        year = st.number_input(
-            "Year",
-            min_value=2000,
-            max_value=2100,
-            value=2026,
-            step=1,
-        )
-        work_type = st.selectbox("Work type", options=WORK_TYPE_OPTIONS)
-        work_number = ""
-        custom_work_type = ""
-        if work_type == "custom":
-            custom_work_type = st.text_input(
-                "Custom work type",
-                placeholder="take home exam",
-            )
-        else:
-            work_number = st.text_input("Work number", placeholder="1")
-
-    with metadata_column_right:
-        professor_last_name = st.text_input("Professor last name", placeholder="Ng")
-        submitter_email = st.text_input(
-            "Submitter email",
-            placeholder="student@uchicago.edu",
-        )
-        submission_note = st.text_area(
-            "Submission note",
-            placeholder="Optional context for reviewer",
-        )
-
     validated_upload: ValidatedUploadedFile | None = None
-    upload_metadata: UploadMetadata | None = None
     validation_errors: list[str] = []
-
     if uploaded_file is not None:
         try:
             validated_upload = validate_uploaded_file(
                 file_name=uploaded_file.name,
                 file_bytes=uploaded_file.getvalue(),
             )
+            uploaded_file_signature = build_uploaded_file_signature(validated_upload)
+            if st.session_state[UPLOAD_FILE_SIGNATURE_KEY] != uploaded_file_signature:
+                upload_form_defaults = derive_upload_form_defaults_from_file_name(
+                    validated_upload.file_name
+                )
+                if upload_form_defaults is not None:
+                    apply_upload_form_defaults(upload_form_defaults)
+                st.session_state[UPLOAD_FILE_SIGNATURE_KEY] = uploaded_file_signature
         except UploadValidationError as error:
             validation_errors.append(str(error))
+    else:
+        st.session_state[UPLOAD_FILE_SIGNATURE_KEY] = ""
+
+    metadata_column_left, metadata_column_right = st.columns(2)
+    with metadata_column_left:
+        course_category = st.text_input(
+            "Course category",
+            placeholder="CMSC",
+            key=UPLOAD_COURSE_CATEGORY_KEY,
+        )
+        course_number = st.text_input(
+            "Course number",
+            placeholder="27100",
+            key=UPLOAD_COURSE_NUMBER_KEY,
+        )
+        quarter = st.selectbox(
+            "Quarter",
+            options=QUARTER_OPTIONS,
+            key=UPLOAD_QUARTER_KEY,
+        )
+        year = st.number_input(
+            "Year",
+            min_value=2000,
+            max_value=2100,
+            value=2026,
+            step=1,
+            key=UPLOAD_YEAR_KEY,
+        )
+        work_type = st.selectbox(
+            "Work type",
+            options=WORK_TYPE_OPTIONS,
+            key=UPLOAD_WORK_TYPE_KEY,
+        )
+        work_number = ""
+        custom_work_type = ""
+        if work_type == "custom":
+            custom_work_type = st.text_input(
+                "Custom work type",
+                placeholder="take home exam",
+                key=UPLOAD_CUSTOM_WORK_TYPE_KEY,
+            )
+        else:
+            work_number = st.text_input(
+                "Work number",
+                placeholder="1",
+                key=UPLOAD_WORK_NUMBER_KEY,
+            )
+
+    with metadata_column_right:
+        professor_last_name = st.text_input(
+            "Professor last name",
+            placeholder="Ng",
+            key=UPLOAD_PROFESSOR_LAST_NAME_KEY,
+        )
+        submitter_name = st.text_input(
+            "Submitter name",
+            placeholder="Jane Doe",
+            key=UPLOAD_SUBMITTER_NAME_KEY,
+        )
+        submission_note = st.text_area(
+            "Submission note",
+            placeholder="Optional context for reviewer",
+            key=UPLOAD_SUBMISSION_NOTE_KEY,
+        )
+
+    upload_metadata: UploadMetadata | None = None
 
     form_has_started = any(
         [
@@ -609,7 +703,7 @@ def render_upload_tab() -> None:
             course_category,
             course_number,
             professor_last_name,
-            submitter_email,
+            submitter_name,
             submission_note,
             custom_work_type,
             work_number,
@@ -626,7 +720,7 @@ def render_upload_tab() -> None:
             work_number=work_number,
             custom_work_type=custom_work_type,
             professor_last_name=professor_last_name,
-            submitter_email=submitter_email,
+            submitter_name=submitter_name,
             submission_note=submission_note,
         )
     except UploadValidationError as error:
@@ -784,7 +878,7 @@ def build_pull_request_body(
     pull_request_lines = [
         "## Upload Submission",
         "",
-        f"- Submitter email: {upload_metadata.submitter_email}",
+        f"- Submitter name: {upload_metadata.submitter_name}",
         f"- Original file name: {original_file_name}",
         f"- Target path: `{target_path}`",
         f"- Course folder: `{course_folder}`",
