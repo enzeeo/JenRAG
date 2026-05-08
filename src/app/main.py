@@ -237,6 +237,18 @@ def inject_application_theme() -> None:
 
         [data-testid="stAppViewContainer"] {{
             color: {PRIMARY_BLUE_COLOR};
+            background: white;
+        }}
+
+        [data-testid="stAppViewContainer"] h1,
+        [data-testid="stAppViewContainer"] h2,
+        [data-testid="stAppViewContainer"] h3,
+        [data-testid="stAppViewContainer"] label,
+        [data-testid="stAppViewContainer"] [data-testid="stMarkdownContainer"],
+        [data-testid="stAppViewContainer"] p,
+        [data-testid="stAppViewContainer"] li,
+        [data-testid="stAppViewContainer"] span {{
+            color: {DARK_BLUE_ACCENT_COLOR};
         }}
 
         [data-testid="stSidebar"] {{
@@ -265,12 +277,12 @@ def inject_application_theme() -> None:
         .jenrag-caption-ticker {{
             position: relative;
             overflow: hidden;
-            margin-top: -0.25rem;
+            width: min(100%, 48rem);
+            margin-top: -0.5rem;
             margin-bottom: 1rem;
-            font-size: 0.75rem;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            color: {DARK_BLUE_ACCENT_COLOR};
+            font-size: 0.7rem;
+            letter-spacing: 0.04em;
+            color: {PRIMARY_BLUE_COLOR};
             white-space: nowrap;
         }}
 
@@ -286,19 +298,19 @@ def inject_application_theme() -> None:
 
         .jenrag-caption-ticker::before {{
             left: 0;
-            background: linear-gradient(to right, white, transparent);
+            background: linear-gradient(to right, white 20%, transparent);
         }}
 
         .jenrag-caption-ticker::after {{
             right: 0;
-            background: linear-gradient(to left, white, transparent);
+            background: linear-gradient(to left, white 20%, transparent);
         }}
 
         .jenrag-caption-track {{
             display: inline-flex;
             min-width: max-content;
-            gap: 2rem;
-            animation: jenrag-scroll-left 22s linear infinite;
+            gap: 1.5rem;
+            animation: jenrag-scroll-left 18s linear infinite;
         }}
 
         @keyframes jenrag-scroll-left {{
