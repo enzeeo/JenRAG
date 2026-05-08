@@ -77,14 +77,17 @@ UNMATCHED_PDF_UPLOAD_DIRECTORY = "data/unmatched-pdf"
 SIDEBAR_WIKI_GRAPH_STATE_KEY = "sidebar_wiki_graph"
 SIDEBAR_WIKI_GRAPH_SELECTION_KEY = "sidebar_wiki_graph_selection"
 SIDEBAR_WIKI_GRAPH_HEIGHT = 320
-SIDEBAR_WIKI_GRAPH_SEED_COLOR = "#1c2638"
+SIDEBAR_WIKI_GRAPH_SEED_COLOR = "#b8c4ff"
 SIDEBAR_WIKI_GRAPH_RELATED_COLOR = "#4C566A"
+SIDEBAR_WIKI_GRAPH_PRIMARY_NODE_COLOR = "#FFFFFF"
 MISSING_CONFIGURATION_SENTINELS = {"", "none", "null"}
 SIDEBAR_WIKI_GRAPH_EDGE_COLOR = "#8A93A2"
 SIDEBAR_WIKI_GRAPH_HIGHLIGHT_COLOR = "#F2CC8F"
 SIDEBAR_WIKI_GRAPH_NODE_SPACING = 220
 SIDEBAR_WIKI_GRAPH_SPRING_LENGTH = 180
 SIDEBAR_WIKI_GRAPH_SPRING_STRENGTH = 0.04
+SIDEBAR_WIKI_GRAPH_MAX_HOVER_WORDS = 4
+SIDEBAR_WIKI_GRAPH_MAX_HOVER_CHARACTERS = 36
 UPLOAD_FILE_KEY = "upload_file"
 UPLOAD_FILE_SIGNATURE_KEY = "upload_file_signature"
 UPLOAD_COURSE_CATEGORY_KEY = "upload_course_category"
@@ -1302,6 +1305,52 @@ def render_conversation_memory_panel(
     st.caption(f"Unresolved follow-up: {latest_unresolved_follow_up}")
 
 
+def build_sidebar_wiki_graph_hover_title(title: str, page_type: str) -> str:
+    """Return a short hover title that better matches node content."""
+    normalized_title = " ".join(title.split())
+    if not normalized_title:
+        return ""
+
+    title_segments = [
+        segment.strip()
+        for segment in re.split(r"\s+[—:-]\s+", normalized_title)
+        if segment.strip()
+    ]
+    generic_segment_pattern = re.compile(
+        r"^(section|chapter|part|problem|question|lecture|notes?|document)"
+        r"(\s+[a-z0-9ivx.-]+)?$",
+        re.IGNORECASE,
+    )
+
+    candidate_title = normalized_title
+    for title_segment in reversed(title_segments):
+        if generic_segment_pattern.fullmatch(title_segment):
+            continue
+        candidate_title = title_segment
+        break
+    else:
+        if title_segments:
+            candidate_title = title_segments[0]
+
+    if len(candidate_title) <= SIDEBAR_WIKI_GRAPH_MAX_HOVER_CHARACTERS:
+        return candidate_title
+
+    shortened_title = " ".join(
+        candidate_title.split()[:SIDEBAR_WIKI_GRAPH_MAX_HOVER_WORDS]
+    ).strip()
+    if len(shortened_title) > SIDEBAR_WIKI_GRAPH_MAX_HOVER_CHARACTERS:
+        shortened_title = shortened_title[
+            :SIDEBAR_WIKI_GRAPH_MAX_HOVER_CHARACTERS
+        ].rstrip()
+
+    if shortened_title and len(shortened_title) < len(candidate_title):
+        return shortened_title + "..."
+
+    if page_type.strip():
+        return candidate_title[:SIDEBAR_WIKI_GRAPH_MAX_HOVER_CHARACTERS].rstrip() + "..."
+    return candidate_title
+
+
 def build_sidebar_wiki_graph_payload(retrieval_result) -> dict[str, list[dict[str, object]]] | None:
     """Build a compact sidebar graph payload from retrieved wiki page hits."""
     if load_wiki_graph_neighborhood is None:
@@ -1319,13 +1368,24 @@ def build_sidebar_wiki_graph_payload(retrieval_result) -> dict[str, list[dict[st
     if not graph_nodes:
         return None
 
+    primary_match_slug = ""
+    for wiki_page_hit in retrieval_result.wiki_page_hits:
+        if wiki_page_hit.slug:
+            primary_match_slug = wiki_page_hit.slug
+            break
+
     return {
         "nodes": [
             {
                 "slug": graph_node.slug,
                 "title": graph_node.title,
+                "hover_title": build_sidebar_wiki_graph_hover_title(
+                    graph_node.title,
+                    graph_node.page_type,
+                ),
                 "page_type": graph_node.page_type,
                 "is_seed": graph_node.is_seed,
+                "is_primary_match": graph_node.slug == primary_match_slug,
             }
             for graph_node in graph_nodes
         ],
@@ -1365,18 +1425,24 @@ def render_sidebar_wiki_graph(wiki_database_available: bool) -> None:
 
         graph_nodes = []
         for graph_node_payload in sidebar_wiki_graph_payload["nodes"]:
-            node_color = (
-                SIDEBAR_WIKI_GRAPH_SEED_COLOR
-                if graph_node_payload["is_seed"]
-                else SIDEBAR_WIKI_GRAPH_RELATED_COLOR
-            )
+            if graph_node_payload.get("is_primary_match"):
+                node_color = SIDEBAR_WIKI_GRAPH_PRIMARY_NODE_COLOR
+            elif graph_node_payload["is_seed"]:
+                node_color = SIDEBAR_WIKI_GRAPH_SEED_COLOR
+            else:
+                node_color = SIDEBAR_WIKI_GRAPH_RELATED_COLOR
             graph_nodes.append(
                 Node(
                     id=graph_node_payload["slug"],
                     label="",
-                    title=(
-                        f"{graph_node_payload['title']} "
-                        f"[{graph_node_payload['page_type']}]"
+                    title=str(
+                        graph_node_payload.get(
+                            "hover_title",
+                            build_sidebar_wiki_graph_hover_title(
+                                str(graph_node_payload["title"]),
+                                str(graph_node_payload["page_type"]),
+                            ),
+                        )
                     ),
                     color=node_color,
                     size=20 if graph_node_payload["is_seed"] else 14,

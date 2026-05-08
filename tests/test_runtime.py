@@ -585,6 +585,39 @@ class StreamlitDebugRenderingTests(unittest.TestCase):
 
 
 class StreamlitSidebarWikiGraphTests(unittest.TestCase):
+    def test_build_sidebar_wiki_graph_hover_title_keeps_short_title(self) -> None:
+        main_module = import_main_module()
+
+        self.assertEqual(
+            main_module.build_sidebar_wiki_graph_hover_title(
+                "Merge Sort",
+                "concept",
+            ),
+            "Merge Sort",
+        )
+
+    def test_build_sidebar_wiki_graph_hover_title_shortens_long_specific_title(self) -> None:
+        main_module = import_main_module()
+
+        self.assertEqual(
+            main_module.build_sidebar_wiki_graph_hover_title(
+                "CMSC 27100 Notes — Dynamic Programming Recurrence Optimization Tricks",
+                "section",
+            ),
+            "Dynamic Programming Recurrence Optim...",
+        )
+
+    def test_build_sidebar_wiki_graph_hover_title_uses_non_generic_segment(self) -> None:
+        main_module = import_main_module()
+
+        self.assertEqual(
+            main_module.build_sidebar_wiki_graph_hover_title(
+                "CMSC 27100 Notes — Section 3",
+                "section",
+            ),
+            "CMSC 27100 Notes",
+        )
+
     def test_build_sidebar_wiki_graph_payload_returns_none_without_graph_loader(self) -> None:
         main_module = import_main_module()
         main_module.load_wiki_graph_neighborhood = None
@@ -612,6 +645,70 @@ class StreamlitSidebarWikiGraphTests(unittest.TestCase):
         self.assertIsNone(
             main_module.build_sidebar_wiki_graph_payload(retrieval_result)
         )
+
+    def test_build_sidebar_wiki_graph_payload_marks_primary_match_and_hover_title(self) -> None:
+        main_module = import_main_module()
+        main_module.load_wiki_graph_neighborhood = mock.Mock(
+            return_value=(
+                [
+                    main_module.wiki_query_module.WikiGraphNode(
+                        slug="merge-sort",
+                        title="CMSC 27100 Notes — Merge Sort",
+                        page_type="concept",
+                        is_seed=True,
+                    ),
+                    main_module.wiki_query_module.WikiGraphNode(
+                        slug="master-theorem",
+                        title="CMSC 27100 Notes — Section 4",
+                        page_type="section",
+                        is_seed=False,
+                    ),
+                ],
+                [],
+            )
+        )
+
+        retrieval_result = RetrievalResult(
+            chunk_hits=[],
+            wiki_page_hits=[
+                WikiPageHit(
+                    slug="merge-sort",
+                    title="Merge Sort",
+                    page_type="concept",
+                    summary="Sort recursively, then merge.",
+                    body="Each level costs linear work.",
+                    course_key="cmsc_27100",
+                    source_path="latex/cmsc_27100/notes.tex",
+                    source_title="CMSC 27100 Notes",
+                    section="Merge Sort",
+                    aliases=[],
+                    score=10,
+                ),
+                WikiPageHit(
+                    slug="master-theorem",
+                    title="Master Theorem",
+                    page_type="concept",
+                    summary="Analyze divide-and-conquer recurrences.",
+                    body="Pick the correct comparison case.",
+                    course_key="cmsc_27100",
+                    source_path="latex/cmsc_27100/notes.tex",
+                    source_title="CMSC 27100 Notes",
+                    section="Master Theorem",
+                    aliases=[],
+                    score=9,
+                ),
+            ],
+            related_topics=[],
+        )
+
+        graph_payload = main_module.build_sidebar_wiki_graph_payload(retrieval_result)
+
+        assert graph_payload is not None
+        self.assertEqual(graph_payload["nodes"][0]["slug"], "merge-sort")
+        self.assertTrue(graph_payload["nodes"][0]["is_primary_match"])
+        self.assertEqual(graph_payload["nodes"][0]["hover_title"], "Merge Sort")
+        self.assertFalse(graph_payload["nodes"][1]["is_primary_match"])
+        self.assertEqual(graph_payload["nodes"][1]["hover_title"], "CMSC 27100 Notes")
 
     def test_render_sidebar_shows_graph_panel_after_wiki_status(self) -> None:
         main_module = import_main_module()
@@ -685,14 +782,18 @@ class StreamlitSidebarWikiGraphTests(unittest.TestCase):
                 {
                     "slug": "merge-sort",
                     "title": "Merge Sort",
+                    "hover_title": "Merge Sort",
                     "page_type": "concept",
                     "is_seed": True,
+                    "is_primary_match": True,
                 },
                 {
                     "slug": "master-theorem",
                     "title": "Master Theorem",
+                    "hover_title": "Master Theorem",
                     "page_type": "concept",
                     "is_seed": False,
+                    "is_primary_match": False,
                 },
             ],
             "edges": [
@@ -716,6 +817,15 @@ class StreamlitSidebarWikiGraphTests(unittest.TestCase):
         graph_call = main_module.agraph.call_args.kwargs
         self.assertEqual(len(graph_call["nodes"]), 2)
         self.assertEqual(len(graph_call["edges"]), 1)
+        self.assertEqual(
+            graph_call["nodes"][0].kwargs["color"],
+            main_module.SIDEBAR_WIKI_GRAPH_PRIMARY_NODE_COLOR,
+        )
+        self.assertEqual(graph_call["nodes"][0].kwargs["title"], "Merge Sort")
+        self.assertEqual(
+            graph_call["nodes"][1].kwargs["color"],
+            main_module.SIDEBAR_WIKI_GRAPH_RELATED_COLOR,
+        )
 
     def test_render_chat_tab_reruns_after_storing_graph_payload(self) -> None:
         main_module = import_main_module()
