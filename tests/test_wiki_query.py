@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 from src.wiki.build import initialize_database
-from src.wiki.query import load_wiki_graph_neighborhood
+from src.wiki.query import find_wiki_matches, load_wiki_graph_neighborhood
 
 
 class WikiGraphNeighborhoodTests(unittest.TestCase):
@@ -138,6 +138,50 @@ class WikiGraphNeighborhoodTests(unittest.TestCase):
                     ("master-theorem", "merge-sort", "prerequisite"),
                     ("sorting", "merge-sort", "structural_parent"),
                     ("ford-fulkerson", "master-theorem", "related_topic"),
+                ],
+            )
+            connection.commit()
+        return database_path
+
+
+class WikiMatchTests(unittest.TestCase):
+    def test_find_wiki_matches_normalizes_raw_chunk_source_paths_to_markdown(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            database_path = self.create_wiki_database(Path(temporary_directory))
+
+            matches = find_wiki_matches(
+                query_text="stable matching",
+                chunk_source_paths=["latex/cmsc_27100/notes.tex"],
+                course_keys=["cmsc_27100"],
+                database_path=str(database_path),
+                top_k=5,
+            )
+
+        self.assertTrue(matches)
+        self.assertEqual(matches[0].source_path, "md/cmsc_27100/notes.md")
+
+    def create_wiki_database(self, temporary_directory: Path) -> Path:
+        database_path = temporary_directory / "wiki.sqlite3"
+        with sqlite3.connect(database_path) as connection:
+            initialize_database(connection)
+            connection.executemany(
+                """
+                INSERT INTO pages (
+                    slug, title, page_type, summary, body, course_key, source_path, source_title, section
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                [
+                    (
+                        "stable-matching",
+                        "Stable Matching",
+                        "concept",
+                        "Stable matching pairs agents without blocking pairs.",
+                        "Gale-Shapley computes a stable matching.",
+                        "cmsc_27100",
+                        "md/cmsc_27100/notes.md",
+                        "Notes",
+                        "Stable Matching",
+                    )
                 ],
             )
             connection.commit()

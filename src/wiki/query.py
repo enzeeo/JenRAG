@@ -34,6 +34,15 @@ STOP_WORDS = {
     "use",
     "with",
 }
+RAW_SOURCE_DIRECTORY_NAMES = {
+    "latex",
+    "pdf",
+    "unmatched-latex",
+    "unmatched-pdf",
+    "unmatched-tex",
+}
+MARKDOWN_DIRECTORY_NAME = "md"
+MARKDOWN_EXTENSION = ".md"
 
 
 @dataclass(frozen=True)
@@ -85,6 +94,31 @@ def wiki_database_exists(database_path: str = WIKI_DB_PATH) -> bool:
     return Path(database_path).is_file()
 
 
+def normalize_source_path_to_markdown(source_path: str) -> str:
+    """Map raw source paths to the canonical Markdown corpus path when possible."""
+    normalized_source_path = source_path.strip()
+    if not normalized_source_path:
+        return ""
+
+    source_path_parts = Path(normalized_source_path).parts
+    if len(source_path_parts) < 3:
+        return normalized_source_path
+
+    directory_name = source_path_parts[0]
+    if directory_name == MARKDOWN_DIRECTORY_NAME:
+        return normalized_source_path
+    if directory_name not in RAW_SOURCE_DIRECTORY_NAMES:
+        return normalized_source_path
+
+    course_folder = source_path_parts[1]
+    filename_stem = Path(source_path_parts[-1]).stem
+    return (
+        f"{MARKDOWN_DIRECTORY_NAME}/"
+        f"{course_folder}/"
+        f"{filename_stem}{MARKDOWN_EXTENSION}"
+    )
+
+
 def _load_page_aliases(connection: sqlite3.Connection) -> dict[str, list[str]]:
     page_aliases: dict[str, list[str]] = {}
     for page_slug, alias in connection.execute(
@@ -105,7 +139,11 @@ def find_wiki_matches(
         return []
 
     query_tokens = tokenize(query_text)
-    source_path_set = {path for path in chunk_source_paths if path}
+    source_path_set = {
+        normalize_source_path_to_markdown(path)
+        for path in chunk_source_paths
+        if path
+    }
     course_key_set = {course_key for course_key in course_keys if course_key}
 
     with sqlite3.connect(database_path) as connection:
