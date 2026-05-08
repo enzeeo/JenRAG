@@ -1,5 +1,11 @@
 import os
+from pathlib import Path
 from typing import Callable, TypeVar
+
+try:
+    import tomllib
+except Exception:
+    tomllib = None
 
 try:
     from dotenv import load_dotenv
@@ -10,6 +16,29 @@ except Exception:
 load_dotenv()
 
 ValueType = TypeVar("ValueType")
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+LOCAL_STREAMLIT_SECRETS_PATH = REPOSITORY_ROOT / ".streamlit" / "secrets.toml"
+
+
+def _read_local_streamlit_secret(secret_name: str) -> str | None:
+    """Read a value from local `.streamlit/secrets.toml` for CLI workflows."""
+    if tomllib is None:
+        return None
+
+    if not LOCAL_STREAMLIT_SECRETS_PATH.exists():
+        return None
+
+    try:
+        with LOCAL_STREAMLIT_SECRETS_PATH.open("rb") as secrets_file:
+            secrets_data = tomllib.load(secrets_file)
+    except Exception:
+        return None
+
+    secret_value = secrets_data.get(secret_name)
+    if secret_value is None:
+        return None
+
+    return str(secret_value)
 
 
 def _read_streamlit_secret(secret_name: str) -> str | None:
@@ -35,8 +64,10 @@ def _read_setting(
     default_value: ValueType | None = None,
     caster: Callable[[str], ValueType] | None = None,
 ) -> ValueType | str | None:
-    """Read settings from environment first, then Streamlit secrets, then defaults."""
+    """Read settings from env, local secrets, hosted secrets, then defaults."""
     raw_value = os.getenv(setting_name)
+    if raw_value is None:
+        raw_value = _read_local_streamlit_secret(setting_name)
     if raw_value is None:
         raw_value = _read_streamlit_secret(setting_name)
 
