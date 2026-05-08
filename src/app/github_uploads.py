@@ -170,7 +170,16 @@ class GitHubUploadClient:
                 response_body = response.read().decode("utf-8")
         except error.HTTPError as http_error:
             error_body = http_error.read().decode("utf-8", errors="replace")
-            message = build_github_error_message(http_error.code, error_body)
+            accepted_permissions = http_error.headers.get(
+                "X-Accepted-GitHub-Permissions"
+            )
+            message = build_github_error_message(
+                status_code=http_error.code,
+                error_body=error_body,
+                method=method,
+                request_path=request_path,
+                accepted_permissions=accepted_permissions,
+            )
             raise GitHubUploadError(message, status_code=http_error.code) from http_error
         except error.URLError as url_error:
             raise GitHubUploadError(
@@ -183,15 +192,32 @@ class GitHubUploadClient:
         return json.loads(response_body)
 
 
-def build_github_error_message(status_code: int, error_body: str) -> str:
+def build_github_error_message(
+    status_code: int,
+    error_body: str,
+    method: str,
+    request_path: str,
+    accepted_permissions: str | None = None,
+) -> str:
     """Return a concise error message from a GitHub API failure."""
     try:
         parsed_error = json.loads(error_body)
     except json.JSONDecodeError:
-        return f"GitHub API request failed with status {status_code}: {error_body}"
+        return (
+            f"GitHub API request failed for {method} {request_path} "
+            f"with status {status_code}: {error_body}"
+        )
 
     message = parsed_error.get("message", "Unknown GitHub API error")
-    return f"GitHub API request failed with status {status_code}: {message}"
+    error_message = (
+        f"GitHub API request failed for {method} {request_path} "
+        f"with status {status_code}: {message}"
+    )
+
+    if status_code == 403 and accepted_permissions:
+        error_message += f" Required permissions: {accepted_permissions}."
+
+    return error_message
 
 
 def quote_branch_name(branch_name: str) -> str:
