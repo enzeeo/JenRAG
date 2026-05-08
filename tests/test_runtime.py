@@ -223,6 +223,23 @@ class RetrievalRuntimeTests(unittest.TestCase):
         self.assertNotIn("solve it completely in private", system_prompt)
         self.assertNotIn("you may create a NEW question", system_prompt)
 
+    def test_build_system_prompt_includes_conversation_memory_block(self) -> None:
+        retrieval_result = RetrievalResult(
+            chunk_hits=[],
+            wiki_page_hits=[],
+            related_topics=[],
+        )
+
+        system_prompt = build_system_prompt(
+            "What does this relate to?",
+            retrieval_result,
+            conversation_memory_context="## Active References\n- [explained_concept] Max Flow",
+        )
+
+        self.assertIn("--- CONVERSATION MEMORY ---", system_prompt)
+        self.assertIn("[explained_concept] Max Flow", system_prompt)
+        self.assertIn("Use conversation memory only to resolve", system_prompt)
+
 
 class StreamlitDebugRenderingTests(unittest.TestCase):
     def test_get_missing_upload_configuration_treats_placeholder_values_as_missing(
@@ -380,6 +397,152 @@ class StreamlitDebugRenderingTests(unittest.TestCase):
         )
         self.assertEqual(fake_streamlit.latex_calls, [])
 
+    def test_resolve_follow_up_query_uses_recent_explained_concept(self) -> None:
+        main_module = import_main_module()
+        memory_state = main_module.build_initial_conversation_memory_state()
+        concept_entity = main_module.build_conversation_entity(
+            entity_type="explained_concept",
+            label="Dynamic Programming",
+            canonical_text="Dynamic programming solves overlapping subproblems.",
+            source_turn_index=2,
+            related_hints=["Lecture 8"],
+        )
+        memory_state.conversation_entities = [concept_entity]
+        memory_state.active_references = [
+            main_module.ConversationReferenceState(
+                entity_id=concept_entity.entity_id,
+                entity_type=concept_entity.entity_type,
+                label=concept_entity.label,
+                source_turn_index=concept_entity.source_turn_index,
+                reason="recent explanation",
+            )
+        ]
+
+        resolution = main_module.resolve_follow_up_query(
+            "I don't understand that part.",
+            memory_state,
+        )
+
+        self.assertTrue(resolution.is_follow_up)
+        self.assertEqual(resolution.resolution_confidence, "high")
+        self.assertIn("Dynamic Programming", resolution.resolved_query_text)
+
+    def test_resolve_follow_up_query_prefers_source_section_for_note_grounding(self) -> None:
+        main_module = import_main_module()
+        memory_state = main_module.build_initial_conversation_memory_state()
+        section_entity = main_module.build_conversation_entity(
+            entity_type="source_section",
+            label="Lecture 5 - Max Flow",
+            canonical_text="Source: lecture notes on augmenting paths.",
+            source_turn_index=6,
+            related_hints=["CMSC 27200 Notes"],
+        )
+        memory_state.conversation_entities = [section_entity]
+        memory_state.active_references = main_module.build_active_references_from_entities(
+            memory_state.conversation_entities
+        )
+
+        resolution = main_module.resolve_follow_up_query(
+            "Where did that come from in the notes?",
+            memory_state,
+        )
+
+        self.assertEqual(resolution.resolved_reference_entities[0].entity_type, "source_section")
+        self.assertIn("Lecture 5 - Max Flow", resolution.resolved_query_text)
+
+    def test_resolve_follow_up_query_returns_low_confidence_when_memory_empty(self) -> None:
+        main_module = import_main_module()
+        memory_state = main_module.build_initial_conversation_memory_state()
+
+        resolution = main_module.resolve_follow_up_query(
+            "What does this relate to?",
+            memory_state,
+        )
+
+        self.assertTrue(resolution.is_follow_up)
+        self.assertEqual(resolution.resolution_confidence, "low")
+        self.assertEqual(
+            resolution.unresolved_reason,
+            "Follow-up target is unclear from current session memory.",
+        )
+
+    def test_compact_conversation_memory_preserves_summary_recent_turns_and_entities(self) -> None:
+        main_module = import_main_module()
+        memory_state = main_module.build_initial_conversation_memory_state()
+
+        for content in (
+            "Explain max flow.",
+            "Max flow pushes capacity through a graph.",
+            "What is a common exam trap here?",
+            "Confusing residual edges with original edges is a trap.",
+            "Where was that in the notes?",
+            "Lecture 9 discusses residual graphs directly.",
+        ):
+            role = "user" if len(memory_state.recent_turns) % 2 == 0 else "assistant"
+            main_module.store_conversation_turn(memory_state, role, content)
+
+        archived_entity = main_module.build_conversation_entity(
+            entity_type="exam_trap",
+            label="Residual edges trap",
+            canonical_text="Do not confuse residual capacity with original capacity.",
+            source_turn_index=2,
+            related_hints=["Residual graph"],
+        )
+        retained_entity = main_module.build_conversation_entity(
+            entity_type="source_section",
+            label="Lecture 9 residual graph notes",
+            canonical_text="Lecture 9 covers residual graphs.",
+            source_turn_index=6,
+            related_hints=["Lecture 9"],
+        )
+        memory_state.conversation_entities = [archived_entity, retained_entity]
+
+        main_module.compact_conversation_memory(memory_state, maximum_token_budget=1)
+
+        self.assertEqual(len(memory_state.recent_turns), main_module.COMPACTION_RECENT_TURN_COUNT)
+        self.assertIn(
+            "Residual edges trap",
+            memory_state.compacted_summary["exam_traps"],
+        )
+        self.assertEqual(len(memory_state.conversation_entities), 1)
+        self.assertEqual(memory_state.conversation_entities[0].label, retained_entity.label)
+        self.assertEqual(memory_state.compaction_metadata["compaction_count"], 1)
+
+    def test_run_pipeline_uses_resolved_query_for_retrieval_and_passes_memory_to_generation(self) -> None:
+        main_module = import_main_module()
+        memory_state = main_module.build_initial_conversation_memory_state()
+        concept_entity = main_module.build_conversation_entity(
+            entity_type="explained_concept",
+            label="Greedy stays ahead",
+            canonical_text="This proof compares the greedy prefix against any optimal prefix.",
+            source_turn_index=2,
+        )
+        memory_state.conversation_entities = [concept_entity]
+        memory_state.active_references = main_module.build_active_references_from_entities(
+            memory_state.conversation_entities
+        )
+        retrieval_result = RetrievalResult(chunk_hits=[], wiki_page_hits=[], related_topics=[])
+
+        with (
+            mock.patch.object(main_module, "retrieve", return_value=retrieval_result) as retrieve_mock,
+            mock.patch.object(main_module, "generate", return_value="Answer text") as generate_mock,
+        ):
+            result = main_module.run_pipeline(
+                "I don't understand that part.",
+                memory_state,
+                use_reranker=True,
+                rerank_top_k=5,
+            )
+
+        retrieve_mock.assert_called_once()
+        self.assertIn("Greedy stays ahead", retrieve_mock.call_args.args[0])
+        generate_mock.assert_called_once()
+        self.assertIn(
+            "Greedy stays ahead",
+            generate_mock.call_args.kwargs["conversation_memory_context"],
+        )
+        self.assertEqual(result["answer"], "Answer text")
+
 
 class StreamlitSidebarWikiGraphTests(unittest.TestCase):
     def test_build_sidebar_wiki_graph_payload_returns_none_without_graph_loader(self) -> None:
@@ -439,6 +602,39 @@ class StreamlitSidebarWikiGraphTests(unittest.TestCase):
         self.assertIn(
             "No wiki graph for this query yet.",
             fake_streamlit.caption_calls,
+        )
+
+    def test_render_sidebar_shows_conversation_memory_panel(self) -> None:
+        main_module = import_main_module()
+        fake_streamlit = FakeStreamlit()
+        fake_streamlit.session_state[main_module.CONVERSATION_MEMORY_STATE_KEY] = (
+            main_module.build_initial_conversation_memory_state()
+        )
+        fake_streamlit.session_state[
+            main_module.CONVERSATION_MEMORY_STATE_KEY
+        ].conversation_entities = [
+            main_module.build_conversation_entity(
+                entity_type="explained_concept",
+                label="Minimum Cut",
+                canonical_text="Minimum cut separates source and sink.",
+                source_turn_index=2,
+            )
+        ]
+        fake_streamlit.session_state[
+            main_module.CONVERSATION_MEMORY_STATE_KEY
+        ].active_references = main_module.build_active_references_from_entities(
+            fake_streamlit.session_state[
+                main_module.CONVERSATION_MEMORY_STATE_KEY
+            ].conversation_entities
+        )
+        main_module.st = fake_streamlit
+
+        with mock.patch.object(main_module, "wiki_database_exists", return_value=True):
+            main_module.render_sidebar()
+
+        self.assertIn("**Conversation Memory**", fake_streamlit.markdown_calls)
+        self.assertTrue(
+            any("Tracked entities: 1" in value for value in fake_streamlit.caption_calls)
         )
 
     def test_render_sidebar_uses_graph_renderer_for_cached_payload(self) -> None:
@@ -535,6 +731,40 @@ class StreamlitSidebarWikiGraphTests(unittest.TestCase):
         )
         self.assertIn(("rerun", None), fake_streamlit.call_log)
 
+    def test_render_sidebar_clear_chat_resets_messages_and_memory(self) -> None:
+        main_module = import_main_module()
+        fake_streamlit = FakeStreamlit()
+        fake_streamlit.session_state["messages"] = [{"role": "user", "content": "Explain DP."}]
+        fake_streamlit.session_state[main_module.SIDEBAR_WIKI_GRAPH_STATE_KEY] = {"nodes": []}
+        fake_streamlit.session_state[main_module.CONVERSATION_MEMORY_STATE_KEY] = (
+            main_module.build_initial_conversation_memory_state()
+        )
+        fake_streamlit.session_state[
+            main_module.CONVERSATION_MEMORY_STATE_KEY
+        ].conversation_entities = [
+            main_module.build_conversation_entity(
+                entity_type="explained_concept",
+                label="Dynamic Programming",
+                canonical_text="DP solves overlapping subproblems.",
+                source_turn_index=2,
+            )
+        ]
+        fake_streamlit.button_results["Clear Chat"] = True
+        main_module.st = fake_streamlit
+
+        with mock.patch.object(main_module, "wiki_database_exists", return_value=True):
+            main_module.render_sidebar()
+
+        self.assertEqual(fake_streamlit.session_state["messages"], [])
+        self.assertEqual(
+            fake_streamlit.session_state[
+                main_module.CONVERSATION_MEMORY_STATE_KEY
+            ].conversation_entities,
+            [],
+        )
+        self.assertNotIn(main_module.SIDEBAR_WIKI_GRAPH_STATE_KEY, fake_streamlit.session_state)
+        self.assertIn(("rerun", None), fake_streamlit.call_log)
+
 
 class FakeStreamlit:
     def __init__(self) -> None:
@@ -549,6 +779,7 @@ class FakeStreamlit:
         self.caption_calls: list[str] = []
         self.container_calls: list[bool] = []
         self.chat_input_value: str | None = None
+        self.button_results: dict[str, bool] = {}
 
     def header(self, value: str) -> None:
         self.header_calls.append(value)
@@ -564,7 +795,7 @@ class FakeStreamlit:
 
     def button(self, label: str, use_container_width: bool = False) -> bool:
         self.call_log.append(("button", label))
-        return False
+        return self.button_results.get(label, False)
 
     def divider(self) -> None:
         self.call_log.append(("divider", None))

@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 import os
 from pathlib import Path
 import re
@@ -106,6 +107,689 @@ APP_BACKGROUND_COLOR = "#0e1629"
 MONOSPACE_FONT_FAMILY = (
     "'SFMono-Regular', 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace"
 )
+CONVERSATION_MEMORY_STATE_KEY = "conversation_memory"
+APPROX_MAX_CONTEXT_TOKENS = 200000
+APPROX_CONTEXT_COMPACTION_TOKENS = 140000
+COMPACTION_RECENT_TURN_COUNT = 4
+MAX_TRACKED_CONVERSATION_ENTITIES = 16
+MAX_ACTIVE_REFERENCES = 4
+MAX_ENTITY_EXCERPT_CHARACTERS = 420
+REFERENTIAL_QUERY_PATTERNS = (
+    "that",
+    "this",
+    "it",
+    "those",
+    "these",
+    "the last one",
+    "last one",
+    "previous one",
+    "follow up",
+    "follow-up",
+    "what does this relate to",
+    "what does that relate to",
+    "what topic is this from",
+    "what concept is behind that",
+    "explain that",
+    "explain this",
+    "explain that part",
+    "i don't understand",
+    "i dont understand",
+    "why is that true",
+    "solve it",
+    "provide a solution",
+    "check my answer",
+    "where did that come from",
+    "where was that in the notes",
+    "is that from lecture or homework",
+    "why is that a trap",
+)
+
+
+@dataclass(frozen=True)
+class ConversationTurn:
+    role: str
+    content: str
+    turn_index: int
+
+
+@dataclass(frozen=True)
+class ConversationEntity:
+    entity_id: str
+    entity_type: str
+    label: str
+    canonical_text: str
+    source_turn_index: int
+    related_hints: list[str] = field(default_factory=list)
+    status: str = "active"
+
+
+@dataclass(frozen=True)
+class ConversationReferenceState:
+    entity_id: str
+    entity_type: str
+    label: str
+    source_turn_index: int
+    reason: str
+
+
+@dataclass(frozen=True)
+class QueryResolution:
+    resolved_query_text: str
+    resolved_reference_entities: list[ConversationEntity]
+    resolution_confidence: str
+    is_follow_up: bool
+    unresolved_reason: str = ""
+
+
+@dataclass
+class ConversationMemoryState:
+    compacted_summary: dict[str, list[str] | str] = field(default_factory=dict)
+    recent_turns: list[ConversationTurn] = field(default_factory=list)
+    conversation_entities: list[ConversationEntity] = field(default_factory=list)
+    active_references: list[ConversationReferenceState] = field(default_factory=list)
+    compaction_metadata: dict[str, int | str | None] = field(default_factory=dict)
+
+
+def build_empty_conversation_summary() -> dict[str, list[str] | str]:
+    """Return the default compacted-summary structure."""
+    return {
+        "user_goals": [],
+        "explained_concepts": [],
+        "notes_topics": [],
+        "exam_traps": [],
+        "generated_problems": [],
+        "solution_strategies": [],
+        "source_sections": [],
+        "unresolved_questions": [],
+        "last_compacted_user_message": "",
+    }
+
+
+def build_initial_conversation_memory_state() -> ConversationMemoryState:
+    """Create the default session-scoped memory state."""
+    return ConversationMemoryState(
+        compacted_summary=build_empty_conversation_summary(),
+        recent_turns=[],
+        conversation_entities=[],
+        active_references=[],
+        compaction_metadata={
+            "estimated_tokens": 0,
+            "compaction_count": 0,
+            "last_compacted_turn": None,
+            "last_turn_index": 0,
+            "latest_unresolved_follow_up": "",
+        },
+    )
+
+
+def get_conversation_memory_state() -> ConversationMemoryState:
+    """Return the conversation memory state from Streamlit session state."""
+    if CONVERSATION_MEMORY_STATE_KEY not in st.session_state:
+        st.session_state[CONVERSATION_MEMORY_STATE_KEY] = (
+            build_initial_conversation_memory_state()
+        )
+    return st.session_state[CONVERSATION_MEMORY_STATE_KEY]
+
+
+def estimate_token_count_from_text(text: str) -> int:
+    """Approximate token count conservatively from text length."""
+    if not text:
+        return 0
+    return max(1, (len(text) + 3) // 4)
+
+
+def shorten_text_excerpt(text: str, maximum_characters: int = MAX_ENTITY_EXCERPT_CHARACTERS) -> str:
+    """Trim text for compact memory storage."""
+    normalized_text = " ".join(text.split())
+    if len(normalized_text) <= maximum_characters:
+        return normalized_text
+    return normalized_text[: maximum_characters - 3].rstrip() + "..."
+
+
+def build_conversation_summary_text(
+    compacted_summary: dict[str, list[str] | str],
+) -> str:
+    """Format compacted summary fields into prompt text."""
+    lines = ["## Compacted Summary"]
+    list_sections = [
+        ("user_goals", "User goals"),
+        ("explained_concepts", "Explained concepts"),
+        ("notes_topics", "Notes topics"),
+        ("exam_traps", "Exam traps"),
+        ("generated_problems", "Generated problems"),
+        ("solution_strategies", "Solution strategies"),
+        ("source_sections", "Source sections"),
+        ("unresolved_questions", "Unresolved questions"),
+    ]
+
+    for field_name, label in list_sections:
+        values = compacted_summary.get(field_name, [])
+        if values:
+            lines.append(f"{label}: " + " | ".join(str(value) for value in values))
+        else:
+            lines.append(f"{label}: none")
+
+    last_compacted_user_message = str(
+        compacted_summary.get("last_compacted_user_message", "")
+    ).strip()
+    if last_compacted_user_message:
+        lines.append(f"Last compacted user message: {last_compacted_user_message}")
+
+    return "\n".join(lines)
+
+
+def serialize_conversation_entity(entity: ConversationEntity) -> str:
+    """Return a compact prompt line for one tracked conversation entity."""
+    related_hint_text = ", ".join(entity.related_hints) if entity.related_hints else "none"
+    return (
+        f"- [{entity.entity_type}] {entity.label} "
+        f"(turn {entity.source_turn_index}, status={entity.status}, hints={related_hint_text}) "
+        f"{entity.canonical_text}"
+    )
+
+
+def build_conversation_memory_prompt_context(
+    memory_state: ConversationMemoryState,
+    resolution: QueryResolution,
+) -> str:
+    """Build the prompt block that carries conversation memory into generation."""
+    lines = [build_conversation_summary_text(memory_state.compacted_summary), ""]
+
+    lines.append("## Recent Raw Turns")
+    if memory_state.recent_turns:
+        for recent_turn in memory_state.recent_turns:
+            lines.append(
+                f"- Turn {recent_turn.turn_index} [{recent_turn.role}]: "
+                f"{shorten_text_excerpt(recent_turn.content, 280)}"
+            )
+    else:
+        lines.append("- none")
+
+    lines.append("")
+    lines.append("## Active References")
+    if memory_state.active_references:
+        for active_reference in memory_state.active_references:
+            lines.append(
+                f"- [{active_reference.entity_type}] {active_reference.label} "
+                f"(turn {active_reference.source_turn_index}; reason={active_reference.reason})"
+            )
+    else:
+        lines.append("- none")
+
+    lines.append("")
+    lines.append("## Tracked Entities")
+    if memory_state.conversation_entities:
+        for entity in memory_state.conversation_entities[-MAX_ACTIVE_REFERENCES:]:
+            lines.append(serialize_conversation_entity(entity))
+    else:
+        lines.append("- none")
+
+    lines.append("")
+    lines.append("## Follow-Up Resolution")
+    lines.append(
+        f"- Follow-up detected: {'yes' if resolution.is_follow_up else 'no'}"
+    )
+    lines.append(f"- Resolution confidence: {resolution.resolution_confidence}")
+    if resolution.resolved_reference_entities:
+        for resolved_entity in resolution.resolved_reference_entities:
+            lines.append(
+                f"- Resolved target: [{resolved_entity.entity_type}] {resolved_entity.label}"
+            )
+    elif resolution.unresolved_reason:
+        lines.append(f"- Unresolved: {resolution.unresolved_reason}")
+    else:
+        lines.append("- Resolved target: none")
+
+    return "\n".join(lines)
+
+
+def estimate_conversation_memory_tokens(memory_state: ConversationMemoryState) -> int:
+    """Estimate the memory payload size using the same conservative approximation."""
+    serialized_parts = [build_conversation_summary_text(memory_state.compacted_summary)]
+    serialized_parts.extend(turn.content for turn in memory_state.recent_turns)
+    serialized_parts.extend(
+        serialize_conversation_entity(entity)
+        for entity in memory_state.conversation_entities
+    )
+    serialized_parts.extend(
+        f"{reference.entity_type}:{reference.label}:{reference.reason}"
+        for reference in memory_state.active_references
+    )
+    return estimate_token_count_from_text("\n".join(serialized_parts))
+
+
+def infer_query_topic_label(query: str) -> str:
+    """Return a short topic label from the user query."""
+    normalized_query = " ".join(query.strip().split())
+    normalized_query = re.sub(
+        r"^(explain|summarize|describe|solve|give|provide|what is|what are|why is|why does)\s+",
+        "",
+        normalized_query,
+        flags=re.IGNORECASE,
+    )
+    return shorten_text_excerpt(normalized_query or query.strip(), 90)
+
+
+def build_entity_identifier(entity_type: str, source_turn_index: int, label: str) -> str:
+    """Create a stable session-local identifier for a conversation entity."""
+    slug = re.sub(r"[^a-z0-9]+", "-", label.lower()).strip("-")
+    if not slug:
+        slug = "item"
+    return f"{entity_type}-{source_turn_index}-{slug[:32]}"
+
+
+def build_conversation_entity(
+    entity_type: str,
+    label: str,
+    canonical_text: str,
+    source_turn_index: int,
+    related_hints: list[str] | None = None,
+    status: str = "active",
+) -> ConversationEntity:
+    """Create one tracked conversation entity."""
+    return ConversationEntity(
+        entity_id=build_entity_identifier(entity_type, source_turn_index, label),
+        entity_type=entity_type,
+        label=shorten_text_excerpt(label, 90),
+        canonical_text=shorten_text_excerpt(canonical_text),
+        source_turn_index=source_turn_index,
+        related_hints=related_hints or [],
+        status=status,
+    )
+
+
+def get_next_conversation_turn_index(memory_state: ConversationMemoryState) -> int:
+    """Return the next session-local turn index."""
+    last_turn_index = int(memory_state.compaction_metadata.get("last_turn_index", 0) or 0)
+    return last_turn_index + 1
+
+
+def store_conversation_turn(
+    memory_state: ConversationMemoryState,
+    role: str,
+    content: str,
+) -> ConversationTurn:
+    """Append a raw turn into the memory state."""
+    turn = ConversationTurn(
+        role=role,
+        content=content,
+        turn_index=get_next_conversation_turn_index(memory_state),
+    )
+    memory_state.recent_turns.append(turn)
+    memory_state.compaction_metadata["last_turn_index"] = turn.turn_index
+    return turn
+
+
+def query_mentions_notes(query: str) -> bool:
+    """Return whether the query is explicitly note- or lecture-oriented."""
+    normalized_query = query.casefold()
+    return any(
+        keyword in normalized_query
+        for keyword in ("notes", "lecture", "lectures", "homework", "midterm", "final", "exam")
+    )
+
+
+def query_mentions_exam_trap(query: str, answer: str = "") -> bool:
+    """Return whether the exchange is discussing a trap or pitfall."""
+    combined_text = f"{query}\n{answer}".casefold()
+    return any(
+        keyword in combined_text
+        for keyword in ("trap", "pitfall", "mistake", "common error", "watch out")
+    )
+
+
+def query_mentions_solution_strategy(query: str, answer: str = "") -> bool:
+    """Return whether the exchange is solution- or strategy-oriented."""
+    combined_text = f"{query}\n{answer}".casefold()
+    return any(
+        keyword in combined_text
+        for keyword in ("solve", "solution", "strategy", "approach", "proof", "argument")
+    )
+
+
+def has_referential_language(query: str) -> bool:
+    """Return whether the query appears to depend on prior conversational context."""
+    normalized_query = query.casefold()
+    return any(pattern in normalized_query for pattern in REFERENTIAL_QUERY_PATTERNS)
+
+
+def infer_preferred_entity_types(query: str) -> list[str]:
+    """Map a follow-up query to the most likely entity types it references."""
+    normalized_query = query.casefold()
+    if any(keyword in normalized_query for keyword in ("solve", "solution", "check my answer")):
+        return ["generated_problem", "solution_strategy", "source_section"]
+    if any(keyword in normalized_query for keyword in ("trap", "pitfall", "remember")):
+        return ["exam_trap", "explained_concept", "solution_strategy"]
+    if any(keyword in normalized_query for keyword in ("relate", "topic", "concept", "behind that")):
+        return ["explained_concept", "exam_trap", "notes_topic", "source_section"]
+    if any(keyword in normalized_query for keyword in ("notes", "lecture", "homework", "where did that come from")):
+        return ["source_section", "notes_topic", "generated_problem"]
+    if any(keyword in normalized_query for keyword in ("explain", "understand", "why is that true", "that part")):
+        return ["explained_concept", "solution_strategy", "source_section", "generated_problem"]
+    return ["explained_concept", "notes_topic", "generated_problem", "exam_trap", "source_section"]
+
+
+def deduplicate_conversation_entities(
+    entities: list[ConversationEntity],
+) -> list[ConversationEntity]:
+    """Keep only the newest version of each entity id while preserving order."""
+    newest_entities_by_id: dict[str, ConversationEntity] = {}
+    for entity in entities:
+        newest_entities_by_id[entity.entity_id] = entity
+
+    deduplicated_entities: list[ConversationEntity] = []
+    seen_entity_ids: set[str] = set()
+    for entity in entities:
+        newest_entity = newest_entities_by_id[entity.entity_id]
+        if newest_entity.entity_id in seen_entity_ids:
+            continue
+        deduplicated_entities.append(newest_entity)
+        seen_entity_ids.add(newest_entity.entity_id)
+
+    return deduplicated_entities[-MAX_TRACKED_CONVERSATION_ENTITIES:]
+
+
+def deduplicate_summary_values(values: list[str]) -> list[str]:
+    """Return unique summary values in insertion order."""
+    ordered_values: list[str] = []
+    seen_values: set[str] = set()
+    for value in values:
+        normalized_value = value.strip()
+        if not normalized_value or normalized_value in seen_values:
+            continue
+        ordered_values.append(normalized_value)
+        seen_values.add(normalized_value)
+    return ordered_values
+
+
+def build_active_references_from_entities(
+    entities: list[ConversationEntity],
+) -> list[ConversationReferenceState]:
+    """Project the newest tracked entities into the active-reference list."""
+    active_references: list[ConversationReferenceState] = []
+    seen_entity_types: set[str] = set()
+    for entity in reversed(entities):
+        if entity.entity_type in seen_entity_types:
+            continue
+        active_references.append(
+            ConversationReferenceState(
+                entity_id=entity.entity_id,
+                entity_type=entity.entity_type,
+                label=entity.label,
+                source_turn_index=entity.source_turn_index,
+                reason="recent entity",
+            )
+        )
+        seen_entity_types.add(entity.entity_type)
+        if len(active_references) >= MAX_ACTIVE_REFERENCES:
+            break
+    return active_references
+
+
+def merge_compacted_summary_with_entities(
+    compacted_summary: dict[str, list[str] | str],
+    entities: list[ConversationEntity],
+    archived_turns: list[ConversationTurn],
+) -> dict[str, list[str] | str]:
+    """Merge archived turns and entities into the structured compacted summary."""
+    merged_summary = build_empty_conversation_summary()
+    for field_name, field_value in compacted_summary.items():
+        if isinstance(field_value, list):
+            merged_summary[field_name] = list(field_value)
+        else:
+            merged_summary[field_name] = field_value
+
+    entity_type_to_summary_field = {
+        "explained_concept": "explained_concepts",
+        "notes_topic": "notes_topics",
+        "exam_trap": "exam_traps",
+        "generated_problem": "generated_problems",
+        "solution_strategy": "solution_strategies",
+        "source_section": "source_sections",
+    }
+
+    for entity in entities:
+        summary_field = entity_type_to_summary_field.get(entity.entity_type)
+        if summary_field is None:
+            continue
+        summary_values = list(merged_summary.get(summary_field, []))
+        summary_values.append(entity.label)
+        if entity.entity_type == "generated_problem":
+            summary_values[-1] = f"{entity.label} [{entity.status}]"
+        merged_summary[summary_field] = deduplicate_summary_values(summary_values)
+
+    archived_user_turns = [turn for turn in archived_turns if turn.role == "user"]
+    if archived_user_turns:
+        user_goal_values = list(merged_summary.get("user_goals", []))
+        user_goal_values.extend(
+            infer_query_topic_label(turn.content) for turn in archived_user_turns[-3:]
+        )
+        merged_summary["user_goals"] = deduplicate_summary_values(user_goal_values)
+        merged_summary["last_compacted_user_message"] = shorten_text_excerpt(
+            archived_user_turns[-1].content,
+            160,
+        )
+
+    return merged_summary
+
+
+def compact_conversation_memory(
+    memory_state: ConversationMemoryState,
+    maximum_token_budget: int = APPROX_CONTEXT_COMPACTION_TOKENS,
+) -> None:
+    """Compact older raw turns into structured summary state when memory grows too large."""
+    estimated_tokens = estimate_conversation_memory_tokens(memory_state)
+    memory_state.compaction_metadata["estimated_tokens"] = estimated_tokens
+    if estimated_tokens < maximum_token_budget:
+        return
+
+    if len(memory_state.recent_turns) <= COMPACTION_RECENT_TURN_COUNT:
+        return
+
+    archived_turns = memory_state.recent_turns[:-COMPACTION_RECENT_TURN_COUNT]
+    archived_turn_indexes = {turn.turn_index for turn in archived_turns}
+    keep_turns = memory_state.recent_turns[-COMPACTION_RECENT_TURN_COUNT:]
+
+    archived_entities = [
+        entity
+        for entity in memory_state.conversation_entities
+        if entity.source_turn_index in archived_turn_indexes
+    ]
+    retained_entities = [
+        entity
+        for entity in memory_state.conversation_entities
+        if entity.source_turn_index not in archived_turn_indexes
+    ]
+
+    memory_state.compacted_summary = merge_compacted_summary_with_entities(
+        memory_state.compacted_summary,
+        archived_entities,
+        archived_turns,
+    )
+    memory_state.recent_turns = keep_turns
+    memory_state.conversation_entities = deduplicate_conversation_entities(retained_entities)
+    memory_state.active_references = build_active_references_from_entities(
+        memory_state.conversation_entities
+    )
+    memory_state.compaction_metadata["compaction_count"] = int(
+        memory_state.compaction_metadata.get("compaction_count", 0) or 0
+    ) + 1
+    memory_state.compaction_metadata["last_compacted_turn"] = archived_turns[-1].turn_index
+    memory_state.compaction_metadata["estimated_tokens"] = (
+        estimate_conversation_memory_tokens(memory_state)
+    )
+
+
+def extract_entities_from_exchange(
+    query: str,
+    answer: str,
+    retrieval_result,
+    assistant_turn_index: int,
+) -> list[ConversationEntity]:
+    """Infer tracked conversational entities from one assistant response."""
+    extracted_entities: list[ConversationEntity] = []
+    related_hints: list[str] = []
+
+    for wiki_page_hit in retrieval_result.wiki_page_hits[:2]:
+        related_hints.append(wiki_page_hit.title)
+        extracted_entities.append(
+            build_conversation_entity(
+                entity_type="notes_topic" if query_mentions_notes(query) else "explained_concept",
+                label=wiki_page_hit.title,
+                canonical_text=wiki_page_hit.summary or wiki_page_hit.body,
+                source_turn_index=assistant_turn_index,
+                related_hints=[wiki_page_hit.source_path, wiki_page_hit.section],
+            )
+        )
+
+    for chunk_hit in retrieval_result.chunk_hits[:2]:
+        if not chunk_hit.section and not chunk_hit.title:
+            continue
+        label = chunk_hit.section or chunk_hit.title
+        extracted_entities.append(
+            build_conversation_entity(
+                entity_type="source_section",
+                label=label,
+                canonical_text=chunk_hit.text,
+                source_turn_index=assistant_turn_index,
+                related_hints=[chunk_hit.title, chunk_hit.source_path],
+            )
+        )
+
+    topic_label = infer_query_topic_label(query)
+    if not retrieval_result.wiki_page_hits and any(
+        keyword in query.casefold()
+        for keyword in ("explain", "concept", "notes", "summary", "summarize", "trap")
+    ):
+        extracted_entities.append(
+            build_conversation_entity(
+                entity_type="notes_topic" if query_mentions_notes(query) else "explained_concept",
+                label=topic_label,
+                canonical_text=answer,
+                source_turn_index=assistant_turn_index,
+                related_hints=related_hints,
+            )
+        )
+
+    if query_mentions_exam_trap(query, answer):
+        extracted_entities.append(
+            build_conversation_entity(
+                entity_type="exam_trap",
+                label=f"Exam trap: {topic_label}",
+                canonical_text=answer,
+                source_turn_index=assistant_turn_index,
+                related_hints=related_hints,
+            )
+        )
+
+    if query_mentions_solution_strategy(query, answer):
+        extracted_entities.append(
+            build_conversation_entity(
+                entity_type="solution_strategy",
+                label=f"Strategy: {topic_label}",
+                canonical_text=answer,
+                source_turn_index=assistant_turn_index,
+                related_hints=related_hints,
+            )
+        )
+
+    if "question" in query.casefold() and "practice" in query.casefold():
+        extracted_entities.append(
+            build_conversation_entity(
+                entity_type="generated_problem",
+                label=f"Generated problem: {topic_label}",
+                canonical_text=answer,
+                source_turn_index=assistant_turn_index,
+                related_hints=related_hints,
+                status="solution_pending",
+            )
+        )
+
+    return deduplicate_conversation_entities(extracted_entities)
+
+
+def resolve_follow_up_query(
+    query: str,
+    memory_state: ConversationMemoryState,
+) -> QueryResolution:
+    """Resolve ambiguous follow-up queries against stored conversation memory."""
+    if not has_referential_language(query):
+        return QueryResolution(
+            resolved_query_text=query,
+            resolved_reference_entities=[],
+            resolution_confidence="high",
+            is_follow_up=False,
+        )
+
+    preferred_entity_types = infer_preferred_entity_types(query)
+    active_entity_ids = {reference.entity_id for reference in memory_state.active_references}
+    candidate_entities = [
+        entity
+        for entity in reversed(memory_state.conversation_entities)
+        if entity.entity_id in active_entity_ids or not active_entity_ids
+    ]
+    if not candidate_entities:
+        candidate_entities = list(reversed(memory_state.conversation_entities))
+
+    for preferred_entity_type in preferred_entity_types:
+        for candidate_entity in candidate_entities:
+            if candidate_entity.entity_type != preferred_entity_type:
+                continue
+            resolved_query_text = (
+                f"{query}\n\nConversation target:\n"
+                f"- Type: {candidate_entity.entity_type}\n"
+                f"- Label: {candidate_entity.label}\n"
+                f"- Context: {candidate_entity.canonical_text}"
+            )
+            return QueryResolution(
+                resolved_query_text=resolved_query_text,
+                resolved_reference_entities=[candidate_entity],
+                resolution_confidence="high",
+                is_follow_up=True,
+            )
+
+    unresolved_reason = "Follow-up target is unclear from current session memory."
+    return QueryResolution(
+        resolved_query_text=query,
+        resolved_reference_entities=[],
+        resolution_confidence="low",
+        is_follow_up=True,
+        unresolved_reason=unresolved_reason,
+    )
+
+
+def update_memory_after_exchange(
+    memory_state: ConversationMemoryState,
+    query: str,
+    answer: str,
+    retrieval_result,
+    resolution: QueryResolution,
+) -> None:
+    """Record a successful user/assistant exchange into session memory."""
+    store_conversation_turn(memory_state, "user", query)
+    assistant_turn = store_conversation_turn(memory_state, "assistant", answer)
+    new_entities = extract_entities_from_exchange(
+        query,
+        answer,
+        retrieval_result,
+        assistant_turn.turn_index,
+    )
+    memory_state.conversation_entities = deduplicate_conversation_entities(
+        memory_state.conversation_entities + new_entities
+    )
+    memory_state.active_references = build_active_references_from_entities(
+        memory_state.conversation_entities
+    )
+    if resolution.unresolved_reason:
+        memory_state.compaction_metadata["latest_unresolved_follow_up"] = (
+            resolution.unresolved_reason
+        )
+    else:
+        memory_state.compaction_metadata["latest_unresolved_follow_up"] = ""
+    memory_state.compaction_metadata["estimated_tokens"] = (
+        estimate_conversation_memory_tokens(memory_state)
+    )
+    compact_conversation_memory(memory_state)
 
 
 def _delimiter_is_escaped(text: str, delimiter_index: int) -> bool:
@@ -513,25 +1197,73 @@ def validate_chat_runtime_state() -> list[str]:
     return errors
 
 
-def run_pipeline(query: str, use_reranker: bool, rerank_top_k: int) -> dict:
+def run_pipeline(
+    query: str,
+    conversation_memory_state: ConversationMemoryState | None,
+    use_reranker: bool,
+    rerank_top_k: int,
+) -> dict:
     """Run the full RAG pipeline and return results with timing."""
     timings = {}
+    if conversation_memory_state is None:
+        conversation_memory_state = get_conversation_memory_state()
+    query_resolution = resolve_follow_up_query(query, conversation_memory_state)
 
     retrieval_start_time = time.time()
     retrieval_result = retrieve(
-        query,
+        query_resolution.resolved_query_text,
         rerank_top_k=rerank_top_k,
         use_reranker=use_reranker,
     )
     timings["retrieval"] = time.time() - retrieval_start_time
 
     generation_start_time = time.time()
-    answer = generate(query, retrieval_result)
+    conversation_memory_prompt_context = build_conversation_memory_prompt_context(
+        conversation_memory_state,
+        query_resolution,
+    )
+    answer = generate(
+        query,
+        retrieval_result,
+        conversation_memory_context=conversation_memory_prompt_context,
+    )
     timings["generation"] = time.time() - generation_start_time
 
     timings["total"] = timings["retrieval"] + timings["generation"]
 
-    return {"answer": answer, "retrieval": retrieval_result, "timings": timings}
+    return {
+        "answer": answer,
+        "retrieval": retrieval_result,
+        "timings": timings,
+        "resolution": query_resolution,
+    }
+
+
+def render_conversation_memory_panel(
+    memory_state: ConversationMemoryState,
+) -> None:
+    """Render a compact diagnostic summary of conversation memory state."""
+    compaction_count = int(memory_state.compaction_metadata.get("compaction_count", 0) or 0)
+    active_reference_label = (
+        memory_state.active_references[0].label
+        if memory_state.active_references
+        else "none"
+    )
+    latest_unresolved_follow_up = str(
+        memory_state.compaction_metadata.get("latest_unresolved_follow_up", "")
+    ).strip() or "none"
+    estimated_tokens = int(memory_state.compaction_metadata.get("estimated_tokens", 0) or 0)
+
+    st.markdown("**Conversation Memory**")
+    st.caption(
+        "Active: "
+        + ("yes" if memory_state.recent_turns or memory_state.conversation_entities else "no")
+    )
+    st.caption(f"Compactions: {compaction_count}")
+    st.caption(f"Active reference: {active_reference_label}")
+    st.caption(f"Tracked entities: {len(memory_state.conversation_entities)}")
+    st.caption(f"Approx tokens: {estimated_tokens}/{APPROX_MAX_CONTEXT_TOKENS}")
+    st.caption(f"Unresolved follow-up: {latest_unresolved_follow_up}")
 
 
 def build_sidebar_wiki_graph_payload(retrieval_result) -> dict[str, list[dict[str, object]]] | None:
@@ -575,6 +1307,9 @@ def build_sidebar_wiki_graph_payload(retrieval_result) -> dict[str, list[dict[st
 def render_sidebar_wiki_graph(wiki_database_available: bool) -> None:
     """Render a small retrieval-driven wiki graph panel inside the sidebar."""
     with st.container(border=True):
+        st.caption(
+            "Wiki sidecar: available" if wiki_database_available else "Wiki sidecar: unavailable"
+        )
         st.markdown("**Local Wiki Graph**")
 
         if not wiki_database_available:
@@ -665,15 +1400,21 @@ def render_sidebar_wiki_graph(wiki_database_available: bool) -> None:
 
 def render_sidebar() -> tuple[bool, int]:
     """Render chat controls shared across the app."""
+    conversation_memory_state = get_conversation_memory_state()
     with st.sidebar:
         st.header("Pipeline Settings")
         use_reranker = st.toggle("Enable reranker", value=True)
         rerank_top_k = st.slider("Chunks to keep after reranking", 3, 15, 5)
         if st.button("Clear Chat", use_container_width=True):
             st.session_state.messages = []
+            st.session_state[CONVERSATION_MEMORY_STATE_KEY] = (
+                build_initial_conversation_memory_state()
+            )
             st.session_state.pop(SIDEBAR_WIKI_GRAPH_STATE_KEY, None)
             st.session_state.pop(SIDEBAR_WIKI_GRAPH_SELECTION_KEY, None)
             st.rerun()
+        st.divider()
+        render_conversation_memory_panel(conversation_memory_state)
         st.divider()
         wiki_database_available = wiki_database_exists(WIKI_DB_PATH)
         render_sidebar_wiki_graph(wiki_database_available)
@@ -708,6 +1449,7 @@ def render_retrieval_debug(retrieval_result) -> None:
 def render_chat_tab(use_reranker: bool, rerank_top_k: int) -> None:
     """Render the existing chat interface."""
     query = st.chat_input("Ask about homework, exam problems, solutions, notes, and concepts...")
+    conversation_memory_state = get_conversation_memory_state()
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
@@ -736,7 +1478,12 @@ def render_chat_tab(use_reranker: bool, rerank_top_k: int) -> None:
     with st.chat_message("assistant"):
         try:
             with st.spinner("Retrieving and generating..."):
-                result = run_pipeline(query, use_reranker, rerank_top_k)
+                result = run_pipeline(
+                    query,
+                    conversation_memory_state,
+                    use_reranker,
+                    rerank_top_k,
+                )
         except Exception as error:
             st.error(
                 "The hosted app could not complete this request. "
@@ -747,6 +1494,21 @@ def render_chat_tab(use_reranker: bool, rerank_top_k: int) -> None:
 
         st.session_state[SIDEBAR_WIKI_GRAPH_STATE_KEY] = (
             build_sidebar_wiki_graph_payload(result["retrieval"])
+        )
+        update_memory_after_exchange(
+            conversation_memory_state,
+            query,
+            result["answer"],
+            result["retrieval"],
+            result.get(
+                "resolution",
+                QueryResolution(
+                    resolved_query_text=query,
+                    resolved_reference_entities=[],
+                    resolution_confidence="high",
+                    is_follow_up=False,
+                ),
+            ),
         )
         assistant_message = {
             "role": "assistant",

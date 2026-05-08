@@ -50,7 +50,11 @@ Rules:
 - Treat chunk evidence as highest-trust source because it comes directly from uploaded corpus files.
 - Use generated wiki pages only as grounded summaries of those source files, never as license to invent missing facts.
 - If chunk evidence and wiki summary disagree, trust chunk evidence and mention discrepancy.
+- Use conversation memory only to resolve what the user is referring to across turns.
+- Do not treat conversation memory as factual evidence when it conflicts with retrieved course material.
 - If evidence is insufficient, say so clearly.
+- If the conversational reference is understandable but corpus evidence is weak, say that explicitly.
+- If the follow-up target is unclear from conversation memory, say you need clarification.
 - Do not use unsupported outside knowledge.
 - Cite source titles, section names, or source paths when useful.
 - When asked for practice questions, derive them from retrieved material instead of introducing unrelated topics.
@@ -60,7 +64,13 @@ Rules:
 
 {context}
 
---- END EVIDENCE ---"""
+--- END EVIDENCE ---
+
+--- CONVERSATION MEMORY ---
+
+{conversation_memory}
+
+--- END CONVERSATION MEMORY ---"""
 
 PRACTICE_GENERATION_PROMPT_SUFFIX = """
 
@@ -114,10 +124,17 @@ def is_practice_generation_request(query: str) -> bool:
     return any(keyword in normalized_query for keyword in PRACTICE_REQUEST_KEYWORDS)
 
 
-def build_system_prompt(query: str, retrieval_result: RetrievalResult) -> str:
+def build_system_prompt(
+    query: str,
+    retrieval_result: RetrievalResult,
+    conversation_memory_context: str = "",
+) -> str:
     """Build the system prompt, adding stricter practice-generation rules when needed."""
     context = build_context(retrieval_result)
-    system_prompt = SYSTEM_PROMPT.format(context=context)
+    system_prompt = SYSTEM_PROMPT.format(
+        context=context,
+        conversation_memory=conversation_memory_context or "No prior conversation memory.",
+    )
     if is_practice_generation_request(query):
         system_prompt += PRACTICE_GENERATION_PROMPT_SUFFIX
     return system_prompt
@@ -126,11 +143,16 @@ def build_system_prompt(query: str, retrieval_result: RetrievalResult) -> str:
 def generate(
     query: str,
     retrieval_result: RetrievalResult,
+    conversation_memory_context: str = "",
     temperature: float = 0.1,
     max_tokens: int = 1024,
 ) -> str:
     """Generate an answer from retrieved chunks."""
-    system = build_system_prompt(query, retrieval_result)
+    system = build_system_prompt(
+        query,
+        retrieval_result,
+        conversation_memory_context=conversation_memory_context,
+    )
 
     log.info(
         "Generating with %s chunks, %s wiki pages, %s related topics, ~%s prompt tokens",
