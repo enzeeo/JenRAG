@@ -581,13 +581,21 @@ class StreamlitDebugRenderingTests(unittest.TestCase):
         self.assertIn("padding-bottom: 6rem", injected_theme)
         self.assertIn('[data-testid="stChatInput"]', injected_theme)
         self.assertIn("position: fixed !important", injected_theme)
-        self.assertIn("left: 50%", injected_theme)
-        self.assertIn("transform: translateX(-50%)", injected_theme)
-        self.assertIn("width: min(56rem, calc(100vw - 2rem))", injected_theme)
+        self.assertIn("left: var(--jenrag-chat-composer-left, 1rem)", injected_theme)
+        self.assertIn("transform: none", injected_theme)
+        self.assertIn(
+            "width: var(--jenrag-chat-composer-width, calc(100vw - (1rem * 2)))",
+            injected_theme,
+        )
+        self.assertIn("max-width: calc(100vw - (1rem * 2))", injected_theme)
         self.assertIn("padding-bottom: max(1rem, env(safe-area-inset-bottom))", injected_theme)
         self.assertIn('[data-testid="stChatInput"] textarea', injected_theme)
         self.assertNotIn('[data-testid="stBottom"]', injected_theme)
         self.assertIn("env(safe-area-inset-bottom)", injected_theme)
+        self.assertIn("ResizeObserver", injected_theme)
+        self.assertIn("MutationObserver", injected_theme)
+        self.assertIn("--jenrag-chat-composer-left", injected_theme)
+        self.assertIn("--jenrag-chat-composer-width", injected_theme)
 
 
 class StreamlitSidebarWikiGraphTests(unittest.TestCase):

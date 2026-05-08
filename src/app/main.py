@@ -113,6 +113,7 @@ MONOSPACE_FONT_FAMILY = (
 CHAT_COMPOSER_BOTTOM_OFFSET = "max(1rem, env(safe-area-inset-bottom))"
 CHAT_COMPOSER_MIN_HEIGHT = "3.5rem"
 CHAT_COMPOSER_CONTENT_PADDING = "6rem"
+CHAT_COMPOSER_VIEWPORT_MARGIN = "1rem"
 CONVERSATION_MEMORY_STATE_KEY = "conversation_memory"
 APPROX_MAX_CONTEXT_TOKENS = 200000
 APPROX_CONTEXT_COMPACTION_TOKENS = 140000
@@ -1027,10 +1028,11 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
 
 [data-testid="stChatInput"] {{
     position: fixed !important;
-    left: 50%;
+    left: var(--jenrag-chat-composer-left, {CHAT_COMPOSER_VIEWPORT_MARGIN});
     bottom: 0;
-    transform: translateX(-50%);
-    width: min(56rem, calc(100vw - 2rem));
+    transform: none;
+    width: var(--jenrag-chat-composer-width, calc(100vw - ({CHAT_COMPOSER_VIEWPORT_MARGIN} * 2)));
+    max-width: calc(100vw - ({CHAT_COMPOSER_VIEWPORT_MARGIN} * 2));
     z-index: 30;
     padding-top: 0.25rem;
     padding-bottom: {CHAT_COMPOSER_BOTTOM_OFFSET};
@@ -1055,7 +1057,63 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
     padding-top: 0.65rem;
     padding-bottom: 0.65rem;
 }}
-</style>"""
+</style>
+<script>
+(() => {{
+    const viewportMarginPixels = 16;
+    const rootElement = document.documentElement;
+    const contentSelector = '[data-testid="stAppViewBlockContainer"]';
+
+    function updateChatComposerLayout() {{
+        const contentElement = document.querySelector(contentSelector);
+        if (!contentElement) {{
+            return;
+        }}
+
+        const contentRect = contentElement.getBoundingClientRect();
+        const safeLeft = Math.max(viewportMarginPixels, contentRect.left);
+        const safeRight = Math.min(
+            window.innerWidth - viewportMarginPixels,
+            contentRect.right,
+        );
+        const safeWidth = Math.max(0, safeRight - safeLeft);
+
+        rootElement.style.setProperty(
+            "--jenrag-chat-composer-left",
+            `${{safeLeft}}px`,
+        );
+        rootElement.style.setProperty(
+            "--jenrag-chat-composer-width",
+            `${{safeWidth}}px`,
+        );
+    }}
+
+    window.__jenragChatComposerCleanup?.();
+
+    const resizeObserver = new ResizeObserver(() => {{
+        updateChatComposerLayout();
+    }});
+
+    const mutationObserver = new MutationObserver(() => {{
+        updateChatComposerLayout();
+    }});
+
+    resizeObserver.observe(document.body);
+    mutationObserver.observe(document.body, {{
+        attributes: true,
+        childList: true,
+        subtree: true,
+    }});
+    window.addEventListener("resize", updateChatComposerLayout);
+    updateChatComposerLayout();
+
+    window.__jenragChatComposerCleanup = () => {{
+        resizeObserver.disconnect();
+        mutationObserver.disconnect();
+        window.removeEventListener("resize", updateChatComposerLayout);
+    }};
+}})();
+</script>"""
     )
 
 
