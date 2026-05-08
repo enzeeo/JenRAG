@@ -1025,11 +1025,26 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
     padding-bottom: {CHAT_COMPOSER_CONTENT_PADDING};
 }}
 
-/* Chat composer: sticky to viewport bottom while staying inside main layout width. */
-[data-testid="stChatInput"] {{
-    position: sticky;
-    bottom: {CHAT_COMPOSER_BOTTOM_OFFSET};
+/* Pin Streamlit's bottom container so the composer stays visible while preserving layout width. */
+[data-testid="stBottom"] {{
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
     z-index: 20;
+}}
+
+[data-testid="stBottom"] > div {{
+    background: transparent;
+}}
+
+[data-testid="stBottomBlockContainer"] {{
+    padding-bottom: {CHAT_COMPOSER_BOTTOM_OFFSET};
+}}
+
+[data-testid="stChatInput"] {{
+    position: relative;
+    z-index: 21;
     padding-top: 0.25rem;
     padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
     background: linear-gradient(
