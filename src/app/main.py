@@ -1063,10 +1063,10 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
     const viewportMarginPixels = 16;
     const rootElement = document.documentElement;
     const contentSelectors = [
+        '[data-testid="stAppViewBlockContainer"]',
         '[data-testid="stMain"]',
         '[data-testid="stMainBlockContainer"]',
         'section[data-testid="stMain"]',
-        '[data-testid="stAppViewBlockContainer"]',
     ];
 
     function findContentElement() {{

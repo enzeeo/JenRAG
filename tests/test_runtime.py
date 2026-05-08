@@ -601,6 +601,10 @@ class StreamlitDebugRenderingTests(unittest.TestCase):
         self.assertIn('[data-testid="stSidebar"]', injected_theme)
         self.assertIn("sidebarRect.right + viewportMarginPixels", injected_theme)
         self.assertIn("sidebarVisibleWidth > 48", injected_theme)
+        self.assertLess(
+            injected_theme.index('[data-testid="stAppViewBlockContainer"]'),
+            injected_theme.index('[data-testid="stMain"]'),
+        )
 
 
 class StreamlitSidebarWikiGraphTests(unittest.TestCase):
