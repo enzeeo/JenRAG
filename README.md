@@ -364,6 +364,7 @@ uv run beir-ingest
 uv run beir-eval
 uv run beir-eval --use-reranker
 uv run evaluate
+uv run test-workflow
 ```
 
 `uv run evaluate` now checks grounded study workflows rather than the old
@@ -376,6 +377,25 @@ domain-specific fixture set. Default cases cover:
 
 Override the bundled smoke cases by adding `data/eval_cases.json`. Use
 `data/eval_cases.example.json` as the template shape.
+
+## Full Workflow Regression
+
+Run this before opening a PR when you touch app bootstrap, ingest, retrieval,
+wiki build, or evaluation wiring:
+
+```bash
+uv run test-workflow
+```
+
+This command is offline and fixture-based. It:
+
+- imports `src/app/main.py` with Streamlit bootstrap disabled
+- rebuilds a temp Chroma snapshot from a small local Markdown corpus
+- rebuilds temp wiki SQLite and report artifacts
+- runs `evaluate`-style smoke cases against those temp artifacts
+
+Failures are reported by phase: `app/runtime`, `ingest`, `wiki build`, or
+`evaluation`.
 
 ## Optional Scraper
 

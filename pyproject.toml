@@ -32,6 +32,7 @@ evaluate = "src.eval.harness:main"
 beir-ingest = "src.eval.beir_ingest:main"
 beir-eval = "src.eval.beir_eval:main"
 build-wiki = "src.wiki.build:main"
+test-workflow = "src.workflow_regression:main"
 
 [build-system]
 requires = ["hatchling"]

@@ -10,8 +10,6 @@ from src.app.uploads import (
     UploadValidationError,
     ValidatedUploadedFile,
     build_filename_stem,
-    build_markdown_target_path,
-    build_raw_target_path,
     build_target_path,
     build_upload_branch_name,
     normalize_upload_metadata,
@@ -47,6 +45,11 @@ WORK_TYPE_OPTIONS = [
 ]
 QUARTER_OPTIONS = ["fall", "win", "spring"]
 STREAMLIT_BOOTSTRAP_SKIP_ENV_VAR = "JENRAG_SKIP_STREAMLIT_BOOTSTRAP"
+MARKDOWN_UPLOAD_DIRECTORY = "data/md"
+LATEX_UPLOAD_DIRECTORY = "data/latex"
+PDF_UPLOAD_DIRECTORY = "data/pdf"
+UNMATCHED_LATEX_UPLOAD_DIRECTORY = "data/unmatched-tex"
+UNMATCHED_PDF_UPLOAD_DIRECTORY = "data/unmatched-pdf"
 
 
 def get_missing_chat_configuration() -> list[str]:
@@ -61,6 +64,46 @@ def get_missing_chat_configuration() -> list[str]:
         if not setting_value:
             missing_settings.append(setting_name)
     return missing_settings
+
+
+def build_markdown_upload_target_path(upload_metadata: UploadMetadata) -> str:
+    """Return the canonical Markdown path for an upload."""
+    course_folder = (
+        f"{upload_metadata.course_category}_{upload_metadata.course_number}"
+    )
+    filename_stem = build_filename_stem(upload_metadata)
+    return f"{MARKDOWN_UPLOAD_DIRECTORY}/{course_folder}/{filename_stem}.md"
+
+
+def build_raw_upload_target_path(
+    upload_metadata: UploadMetadata,
+    extension: str,
+    matching_markdown_exists: bool,
+) -> str:
+    """Return matched or unmatched raw upload path for `.tex` and `.pdf` files."""
+    normalized_extension = extension.strip().lower()
+    course_folder = (
+        f"{upload_metadata.course_category}_{upload_metadata.course_number}"
+    )
+    filename_stem = build_filename_stem(upload_metadata)
+
+    if normalized_extension == ".tex":
+        base_directory = (
+            LATEX_UPLOAD_DIRECTORY
+            if matching_markdown_exists
+            else UNMATCHED_LATEX_UPLOAD_DIRECTORY
+        )
+        return f"{base_directory}/{course_folder}/{filename_stem}.tex"
+
+    if normalized_extension == ".pdf":
+        base_directory = (
+            PDF_UPLOAD_DIRECTORY
+            if matching_markdown_exists
+            else UNMATCHED_PDF_UPLOAD_DIRECTORY
+        )
+        return f"{base_directory}/{course_folder}/{filename_stem}.pdf"
+
+    raise UploadValidationError("Raw upload path only supports .tex and .pdf files.")
 
 
 def get_missing_upload_configuration() -> list[str]:
@@ -344,13 +387,13 @@ def render_upload_tab() -> None:
             st.markdown("**Target Path Preview**")
             st.code(target_path)
         else:
-            matching_markdown_path = build_markdown_target_path(upload_metadata)
-            matched_target_path = build_raw_target_path(
+            matching_markdown_path = build_markdown_upload_target_path(upload_metadata)
+            matched_target_path = build_raw_upload_target_path(
                 upload_metadata=upload_metadata,
                 extension=validated_upload.extension,
                 matching_markdown_exists=True,
             )
-            unmatched_target_path = build_raw_target_path(
+            unmatched_target_path = build_raw_upload_target_path(
                 upload_metadata=upload_metadata,
                 extension=validated_upload.extension,
                 matching_markdown_exists=False,
@@ -456,13 +499,13 @@ def resolve_upload_target_path(
     """Resolve final repo path for an upload using base-branch Markdown presence."""
     normalized_extension = extension.strip().lower()
     if normalized_extension == ".md":
-        return build_markdown_target_path(upload_metadata)
+        return build_markdown_upload_target_path(upload_metadata)
 
-    matching_markdown_path = build_markdown_target_path(upload_metadata)
+    matching_markdown_path = build_markdown_upload_target_path(upload_metadata)
     matching_markdown_exists = github_client.path_exists_on_base_branch(
         matching_markdown_path
     )
-    return build_raw_target_path(
+    return build_raw_upload_target_path(
         upload_metadata=upload_metadata,
         extension=normalized_extension,
         matching_markdown_exists=matching_markdown_exists,

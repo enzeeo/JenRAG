@@ -1,0 +1,12 @@
+[
+  {
+    "query": "Explain recurrence trees from the course notes.",
+    "reference": "Answer should stay grounded in the retrieved recurrence notes and mention the split-and-combine pattern.",
+    "category": "grounded_explanation"
+  },
+  {
+    "query": "Generate one practice question about graph cuts similar to the assignment material.",
+    "reference": "Answer should create a graph-cut practice question tied to retrieved assignment or notes style.",
+    "category": "practice_generation"
+  }
+]
