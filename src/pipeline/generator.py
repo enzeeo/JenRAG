@@ -32,6 +32,7 @@ Rules:
 - Do not use unsupported outside knowledge.
 - Cite source titles, section names, or source paths when useful.
 - When asked for practice questions, derive them from retrieved material instead of introducing unrelated topics.
+- Format math with standard LaTeX delimiters only: use `$...$` for inline math and `$$...$$` for standalone display math.
 
 --- RETRIEVED EVIDENCE ---
 

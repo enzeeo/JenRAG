@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import re
 import sys
 import time
 
@@ -81,6 +82,103 @@ SIDEBAR_WIKI_GRAPH_HIGHLIGHT_COLOR = "#F2CC8F"
 SIDEBAR_WIKI_GRAPH_NODE_SPACING = 220
 SIDEBAR_WIKI_GRAPH_SPRING_LENGTH = 180
 SIDEBAR_WIKI_GRAPH_SPRING_STRENGTH = 0.04
+INLINE_MATH_DELIMITER = "$"
+DISPLAY_MATH_DELIMITER = "$$"
+
+
+def _delimiter_is_escaped(text: str, delimiter_index: int) -> bool:
+    """Return whether the delimiter at the given index is escaped."""
+    backslash_count = 0
+    check_index = delimiter_index - 1
+    while check_index >= 0 and text[check_index] == "\\":
+        backslash_count += 1
+        check_index -= 1
+    return backslash_count % 2 == 1
+
+
+def _find_unescaped_delimiter(
+    text: str,
+    delimiter: str,
+    start_index: int,
+) -> int:
+    """Return the next unescaped delimiter index or -1 when absent."""
+    search_index = start_index
+    while True:
+        delimiter_index = text.find(delimiter, search_index)
+        if delimiter_index == -1:
+            return -1
+        if not _delimiter_is_escaped(text, delimiter_index):
+            if delimiter == INLINE_MATH_DELIMITER:
+                if delimiter_index + 1 < len(text) and text[delimiter_index + 1] == "$":
+                    search_index = delimiter_index + 1
+                    continue
+            return delimiter_index
+        search_index = delimiter_index + 1
+
+
+def _parse_math_segments(content: str) -> list[tuple[str, str]]:
+    """Split content into markdown prose and display-math segments."""
+    segments: list[tuple[str, str]] = []
+    prose_parts: list[str] = []
+    cursor = 0
+    opener_pattern = re.compile(r"\\\[|\\\(|\$\$|\$")
+    delimiter_pairs = {
+        r"\[": r"\]",
+        r"\(": r"\)",
+        DISPLAY_MATH_DELIMITER: DISPLAY_MATH_DELIMITER,
+        INLINE_MATH_DELIMITER: INLINE_MATH_DELIMITER,
+    }
+    display_delimiters = {r"\[", DISPLAY_MATH_DELIMITER}
+
+    while cursor < len(content):
+        opener_match = opener_pattern.search(content, cursor)
+        if opener_match is None:
+            prose_parts.append(content[cursor:])
+            break
+
+        opener = opener_match.group(0)
+        opener_index = opener_match.start()
+        if _delimiter_is_escaped(content, opener_index):
+            prose_parts.append(content[cursor:opener_index + 1])
+            cursor = opener_index + 1
+            continue
+
+        prose_parts.append(content[cursor:opener_index])
+        closer = delimiter_pairs[opener]
+        math_start_index = opener_match.end()
+        closer_index = _find_unescaped_delimiter(content, closer, math_start_index)
+        if closer_index == -1:
+            prose_parts.append(content[opener_index:])
+            break
+
+        math_content = content[math_start_index:closer_index].strip()
+        if opener in display_delimiters:
+            prose_text = "".join(prose_parts)
+            if prose_text:
+                segments.append(("markdown", prose_text))
+            segments.append(("display_math", math_content))
+            prose_parts = []
+        else:
+            prose_parts.append(
+                f"{INLINE_MATH_DELIMITER}{math_content}{INLINE_MATH_DELIMITER}"
+            )
+
+        cursor = closer_index + len(closer)
+
+    prose_text = "".join(prose_parts)
+    if prose_text:
+        segments.append(("markdown", prose_text))
+
+    return segments
+
+
+def render_assistant_message_content(content: str) -> None:
+    """Render assistant chat content with Streamlit markdown and math blocks."""
+    for segment_type, segment_value in _parse_math_segments(content):
+        if segment_type == "display_math":
+            st.latex(segment_value)
+        else:
+            st.markdown(segment_value)
 
 
 def get_missing_chat_configuration() -> list[str]:
@@ -386,7 +484,10 @@ def render_chat_tab(use_reranker: bool, rerank_top_k: int) -> None:
 
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+            if message["role"] == "assistant":
+                render_assistant_message_content(message["content"])
+            else:
+                st.markdown(message["content"])
             if "retrieval" in message:
                 render_retrieval_debug(message["retrieval"])
             if "timings" in message:

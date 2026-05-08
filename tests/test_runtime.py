@@ -216,6 +216,81 @@ class StreamlitDebugRenderingTests(unittest.TestCase):
         self.assertTrue(any("minimum-cut" in text for text in fake_streamlit.markdown_calls))
         self.assertTrue(any("max-flow" in text for text in fake_streamlit.markdown_calls))
 
+    def test_render_assistant_message_content_renders_inline_dollar_math(self) -> None:
+        main_module = import_main_module()
+        fake_streamlit = FakeStreamlit()
+        main_module.st = fake_streamlit
+
+        main_module.render_assistant_message_content("Probability is $p_i$ for item i.")
+
+        self.assertEqual(
+            fake_streamlit.markdown_calls,
+            ["Probability is $p_i$ for item i."],
+        )
+        self.assertEqual(fake_streamlit.latex_calls, [])
+
+    def test_render_assistant_message_content_normalizes_inline_parentheses_math(self) -> None:
+        main_module = import_main_module()
+        fake_streamlit = FakeStreamlit()
+        main_module.st = fake_streamlit
+
+        main_module.render_assistant_message_content("Probability is \\(p_i\\) for item i.")
+
+        self.assertEqual(
+            fake_streamlit.markdown_calls,
+            ["Probability is $p_i$ for item i."],
+        )
+        self.assertEqual(fake_streamlit.latex_calls, [])
+
+    def test_render_assistant_message_content_renders_display_dollar_math(self) -> None:
+        main_module = import_main_module()
+        fake_streamlit = FakeStreamlit()
+        main_module.st = fake_streamlit
+
+        main_module.render_assistant_message_content(
+            "Indices:\n\n$$i \\in \\{1, \\ldots, n\\}$$\n\nDone."
+        )
+
+        self.assertEqual(fake_streamlit.markdown_calls, ["Indices:\n\n", "\n\nDone."])
+        self.assertEqual(fake_streamlit.latex_calls, ["i \\in \\{1, \\ldots, n\\}"])
+
+    def test_render_assistant_message_content_renders_display_bracket_math(self) -> None:
+        main_module = import_main_module()
+        fake_streamlit = FakeStreamlit()
+        main_module.st = fake_streamlit
+
+        main_module.render_assistant_message_content(
+            "Indices:\n\n\\[i \\in \\{1, \\ldots, n\\}\\]\n\nDone."
+        )
+
+        self.assertEqual(fake_streamlit.markdown_calls, ["Indices:\n\n", "\n\nDone."])
+        self.assertEqual(fake_streamlit.latex_calls, ["i \\in \\{1, \\ldots, n\\}"])
+
+    def test_render_assistant_message_content_keeps_mixed_prose_order(self) -> None:
+        main_module = import_main_module()
+        fake_streamlit = FakeStreamlit()
+        main_module.st = fake_streamlit
+
+        main_module.render_assistant_message_content(
+            "Start $p_i$ middle $$q_i = q_{i-1} + 1$$ end."
+        )
+
+        self.assertEqual(fake_streamlit.markdown_calls, ["Start $p_i$ middle ", " end."])
+        self.assertEqual(fake_streamlit.latex_calls, ["q_i = q_{i-1} + 1"])
+
+    def test_render_assistant_message_content_falls_back_for_unclosed_inline_math(self) -> None:
+        main_module = import_main_module()
+        fake_streamlit = FakeStreamlit()
+        main_module.st = fake_streamlit
+
+        main_module.render_assistant_message_content("Broken math starts at \\(p_i and stays raw.")
+
+        self.assertEqual(
+            fake_streamlit.markdown_calls,
+            ["Broken math starts at \\(p_i and stays raw."],
+        )
+        self.assertEqual(fake_streamlit.latex_calls, [])
+
 
 class StreamlitSidebarWikiGraphTests(unittest.TestCase):
     def test_build_sidebar_wiki_graph_payload_returns_none_without_graph_loader(self) -> None:
@@ -381,6 +456,7 @@ class FakeStreamlit:
         self.expander_labels: list[str] = []
         self.text_calls: list[str] = []
         self.markdown_calls: list[str] = []
+        self.latex_calls: list[str] = []
         self.caption_calls: list[str] = []
         self.container_calls: list[bool] = []
         self.chat_input_value: str | None = None
@@ -416,6 +492,10 @@ class FakeStreamlit:
     def markdown(self, value: str) -> None:
         self.markdown_calls.append(value)
         self.call_log.append(("markdown", value))
+
+    def latex(self, value: str) -> None:
+        self.latex_calls.append(value)
+        self.call_log.append(("latex", value))
 
     def caption(self, value: str) -> None:
         self.caption_calls.append(value)
