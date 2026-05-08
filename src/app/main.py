@@ -1,5 +1,12 @@
 import os
+from pathlib import Path
+import sys
 import time
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+if str(REPOSITORY_ROOT) not in sys.path:
+    # Streamlit may execute this file with `src/app` as the import root.
+    sys.path.insert(0, str(REPOSITORY_ROOT))
 
 import streamlit as st
 try:
