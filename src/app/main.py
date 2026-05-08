@@ -1185,8 +1185,19 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
             contentRect.right,
         );
         const availableWidth = Math.max(0, safeRight - safeLeft);
-        const safeWidth = Math.min(availableWidth, chatComposerMaxWidthPixels);
-        const centeredSafeLeft = safeLeft + Math.max(0, (availableWidth - safeWidth) / 2);
+        const viewportCenterX = window.innerWidth / 2;
+        const availableLeftHalfWidth = Math.max(0, viewportCenterX - safeLeft);
+        const availableRightHalfWidth = Math.max(0, safeRight - viewportCenterX);
+        const centeredWidthLimit = Math.max(
+            0,
+            Math.min(availableLeftHalfWidth, availableRightHalfWidth) * 2,
+        );
+        const safeWidth = Math.min(
+            availableWidth,
+            centeredWidthLimit,
+            chatComposerMaxWidthPixels,
+        );
+        const centeredSafeLeft = viewportCenterX - (safeWidth / 2);
 
         rootElement.style.setProperty(
             "--jenrag-chat-composer-left",
