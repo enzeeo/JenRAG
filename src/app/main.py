@@ -518,14 +518,7 @@ def render_sidebar() -> tuple[bool, int]:
             st.session_state.pop(SIDEBAR_WIKI_GRAPH_SELECTION_KEY, None)
             st.rerun()
         st.divider()
-        st.markdown("**Stack:** Embedding → ChromaDB → BGE Reranker → LLM")
-        st.caption(
-            "Uploads create GitHub pull requests. "
-            "Merged files still need manual `ingest`, `build-wiki`, and artifact commits before search can use them."
-        )
         wiki_database_available = wiki_database_exists(WIKI_DB_PATH)
-        wiki_status = "available" if wiki_database_available else "missing"
-        st.caption(f"Wiki sidecar: {wiki_status}")
         render_sidebar_wiki_graph(wiki_database_available)
 
     return use_reranker, rerank_top_k
@@ -557,7 +550,7 @@ def render_retrieval_debug(retrieval_result) -> None:
 
 def render_chat_tab(use_reranker: bool, rerank_top_k: int) -> None:
     """Render the existing chat interface."""
-    query = st.chat_input("Ask a PSET question...")
+    query = st.chat_input("Ask about homework, exam problems, solutions, notes, and concepts...")
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
@@ -952,10 +945,6 @@ def render_application() -> None:
     validate_work_type_configuration()
     st.set_page_config(page_title="JenRAG", page_icon="📝", layout="wide")
     st.title("JenRAG")
-    st.caption(
-        "Ask about homework, exam problems, solutions, and notes. "
-        "Each signed-in user keeps a separate chat session."
-    )
 
     use_reranker, rerank_top_k = render_sidebar()
     chat_runtime_errors = validate_chat_runtime_state()
