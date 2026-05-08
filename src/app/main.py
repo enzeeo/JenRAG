@@ -1186,10 +1186,11 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
         );
         const availableWidth = Math.max(0, safeRight - safeLeft);
         const safeWidth = Math.min(availableWidth, chatComposerMaxWidthPixels);
+        const centeredSafeLeft = safeLeft + Math.max(0, (availableWidth - safeWidth) / 2);
 
         rootElement.style.setProperty(
             "--jenrag-chat-composer-left",
-            `${{safeLeft}}px`,
+            `${{centeredSafeLeft}}px`,
         );
         rootElement.style.setProperty(
             "--jenrag-chat-composer-width",
