@@ -1062,10 +1062,26 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
 (() => {{
     const viewportMarginPixels = 16;
     const rootElement = document.documentElement;
-    const contentSelector = '[data-testid="stAppViewBlockContainer"]';
+    const contentSelectors = [
+        '[data-testid="stMain"]',
+        '[data-testid="stMainBlockContainer"]',
+        'section[data-testid="stMain"]',
+        '[data-testid="stAppViewBlockContainer"]',
+    ];
+
+    function findContentElement() {{
+        for (const selector of contentSelectors) {{
+            const matchedElement = document.querySelector(selector);
+            if (matchedElement) {{
+                return matchedElement;
+            }}
+        }}
+
+        return null;
+    }}
 
     function updateChatComposerLayout() {{
-        const contentElement = document.querySelector(contentSelector);
+        const contentElement = findContentElement();
         if (!contentElement) {{
             return;
         }}
@@ -1099,6 +1115,10 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
     }});
 
     resizeObserver.observe(document.body);
+    const sidebarElement = document.querySelector('[data-testid="stSidebar"]');
+    if (sidebarElement) {{
+        resizeObserver.observe(sidebarElement);
+    }}
     mutationObserver.observe(document.body, {{
         attributes: true,
         childList: true,

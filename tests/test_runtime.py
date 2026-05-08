@@ -596,6 +596,9 @@ class StreamlitDebugRenderingTests(unittest.TestCase):
         self.assertIn("MutationObserver", injected_theme)
         self.assertIn("--jenrag-chat-composer-left", injected_theme)
         self.assertIn("--jenrag-chat-composer-width", injected_theme)
+        self.assertIn('[data-testid="stMain"]', injected_theme)
+        self.assertIn('[data-testid="stMainBlockContainer"]', injected_theme)
+        self.assertIn('[data-testid="stSidebar"]', injected_theme)
 
 
 class StreamlitSidebarWikiGraphTests(unittest.TestCase):
