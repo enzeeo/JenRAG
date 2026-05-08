@@ -44,10 +44,14 @@ from src.pipeline.config import (
     WIKI_DB_PATH,
 )
 from src.pipeline.vectorstore import init_collection
-from src.wiki.query import (
-    load_wiki_graph_neighborhood,
-    wiki_database_exists,
+from src.wiki import query as wiki_query_module
+
+load_wiki_graph_neighborhood = getattr(
+    wiki_query_module,
+    "load_wiki_graph_neighborhood",
+    None,
 )
+wiki_database_exists = wiki_query_module.wiki_database_exists
 
 WORK_TYPE_OPTIONS = [
     "pset",
@@ -194,6 +198,9 @@ def run_pipeline(query: str, use_reranker: bool, rerank_top_k: int) -> dict:
 
 def build_sidebar_wiki_graph_payload(retrieval_result) -> dict[str, list[dict[str, object]]] | None:
     """Build a compact sidebar graph payload from retrieved wiki page hits."""
+    if load_wiki_graph_neighborhood is None:
+        return None
+
     matched_page_slugs = [
         wiki_page_hit.slug
         for wiki_page_hit in retrieval_result.wiki_page_hits

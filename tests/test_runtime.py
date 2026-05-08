@@ -218,6 +218,34 @@ class StreamlitDebugRenderingTests(unittest.TestCase):
 
 
 class StreamlitSidebarWikiGraphTests(unittest.TestCase):
+    def test_build_sidebar_wiki_graph_payload_returns_none_without_graph_loader(self) -> None:
+        main_module = import_main_module()
+        main_module.load_wiki_graph_neighborhood = None
+
+        retrieval_result = RetrievalResult(
+            chunk_hits=[],
+            wiki_page_hits=[
+                WikiPageHit(
+                    slug="merge-sort",
+                    title="Merge Sort",
+                    page_type="concept",
+                    summary="Sort recursively, then merge.",
+                    body="Each level costs linear work.",
+                    course_key="cmsc_27100",
+                    source_path="latex/cmsc_27100/notes.tex",
+                    source_title="CMSC 27100 Notes",
+                    section="Merge Sort",
+                    aliases=[],
+                    score=10,
+                )
+            ],
+            related_topics=[],
+        )
+
+        self.assertIsNone(
+            main_module.build_sidebar_wiki_graph_payload(retrieval_result)
+        )
+
     def test_render_sidebar_shows_graph_panel_after_wiki_status(self) -> None:
         main_module = import_main_module()
         fake_streamlit = FakeStreamlit()
