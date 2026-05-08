@@ -66,17 +66,27 @@ Create a `.env` file in the project root.
 
 ## Quick Start
 
-For local development with an existing corpus:
+For a full local rebuild from the current Markdown corpus:
+
+```bash
+uv run ingest
+uv run build-wiki
+uv run streamlit run src/app/main.py
+```
+
+That sequence rebuilds embeddings for all current Markdown files under
+`data/md/`, rebuilds the wiki sidecar, and starts the chat UI.
+
+For incremental updates after adding raw source files:
 
 ```bash
 uv run convert-missing
 uv run embed-missing
 uv run build-wiki
-uv run streamlit run src/app/main.py
 ```
 
 That sequence converts missing raw source files into canonical Markdown, updates
-only new embeddings, rebuilds the wiki sidecar, and starts the chat UI.
+only new embeddings, and rebuilds the wiki sidecar.
 
 ## Online Deployment
 
@@ -165,7 +175,7 @@ Uploaded files are stored in these repository paths:
 data/md/<course_category>_<course_number>/<normalized_filename>.md
 data/latex/<course_category>_<course_number>/<normalized_filename>.tex
 data/pdf/<course_category>_<course_number>/<normalized_filename>.pdf
-data/unmatched-tex/<course_category>_<course_number>/<normalized_filename>.tex
+data/unmatched-latex/<course_category>_<course_number>/<normalized_filename>.tex
 data/unmatched-pdf/<course_category>_<course_number>/<normalized_filename>.pdf
 ```
 
@@ -173,7 +183,7 @@ Routing rules:
 
 - `.md` uploads always go to `data/md/...`
 - `.tex` uploads go to `data/latex/...` when the canonical Markdown path already
-  exists on `GITHUB_BASE_BRANCH`; otherwise they go to `data/unmatched-tex/...`
+  exists on `GITHUB_BASE_BRANCH`; otherwise they go to `data/unmatched-latex/...`
 - `.pdf` uploads go to `data/pdf/...` when the canonical Markdown path already
   exists on `GITHUB_BASE_BRANCH`; otherwise they go to `data/unmatched-pdf/...`
 
@@ -183,7 +193,7 @@ Examples:
 data/md/cmsc_27200/cmsc_27200_win_2026_pset1_janos.md
 data/latex/cmsc_27100/cmsc_27100_fall_2025_pset1_ng.tex
 data/pdf/cmsc_27200/cmsc_27200_win_2026_pset2_janos.pdf
-data/unmatched-tex/cmsc_27100/cmsc_27100_fall_2025_lec2_ng.tex
+data/unmatched-latex/cmsc_27100/cmsc_27100_fall_2025_lec2_ng.tex
 data/unmatched-pdf/cmsc_27200/cmsc_27200_win_2026_pset5_janos.pdf
 ```
 
@@ -194,14 +204,15 @@ After merge:
 1. `.md` uploads are ingest-ready and can go straight into the rebuild flow
 2. matched `.pdf` and `.tex` uploads stay in `data/pdf/` or `data/latex/`
 3. unmatched `.pdf` and `.tex` uploads stay in `data/unmatched-pdf/` or
-   `data/unmatched-tex/`
+   `data/unmatched-latex/`
 4. raw uploads may need conversion into reviewed Markdown under `data/md/`
-3. the file is not searchable until a maintainer rebuilds both search artifacts
+5. the file is not searchable until a maintainer rebuilds both search artifacts
    locally
 
 1. `uv run convert-missing`
 2. review generated Markdown under `data/md/`
-3. `uv run embed-missing`
+3. `uv run ingest` for a full rebuild of all current Markdown files, or
+   `uv run embed-missing` for new Markdown only
 4. `uv run build-wiki`
 5. review `data/wiki_report.md`
 6. commit `data/chroma_db/`, `data/wiki.sqlite3`, and `data/wiki_report.md`
@@ -232,7 +243,7 @@ The upload workflow may also store raw source artifacts under:
 ```text
 data/latex/<course_category>_<course_number>/**/*.tex
 data/pdf/<course_category>_<course_number>/**/*.pdf
-data/unmatched-tex/<course_category>_<course_number>/**/*.tex
+data/unmatched-latex/<course_category>_<course_number>/**/*.tex
 data/unmatched-pdf/<course_category>_<course_number>/**/*.pdf
 ```
 
@@ -260,7 +271,7 @@ Optional filters:
 ```bash
 uv run convert-missing --source-type tex
 uv run convert-missing --source-type pdf
-uv run convert-files --source-type all --path data/unmatched-tex/cmsc_27100/file.tex
+uv run convert-files --source-type all --path data/unmatched-latex/cmsc_27100/file.tex
 ```
 
 This will:

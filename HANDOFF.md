@@ -64,11 +64,9 @@ git -C /Users/enzeeo/bluescreen/JenRAG diff -- src/app/uploads.py src/app/main.p
 ## Known Issues
 
 - PDF conversion depends on `pypdf` text extraction quality. Image-only or poorly encoded PDFs may still need manual cleanup after conversion.
-- `README.md` now reflects the new workflow, but `DEPLOYMENT.md` was not updated in this session.
 - Conversion commands were verified through path-selection tests, not live API conversion calls.
 
 ## Next Recommended Steps
 
-1. Run a live smoke test with a real `.tex` upload, a real unmatched `.pdf` upload, `uv run convert-missing`, `uv run embed-missing`, and `uv run build-wiki`.
-2. If deployment docs must stay fully aligned with README, update `DEPLOYMENT.md` next.
-3. If conversion quality is noisy on real PDFs, add review heuristics or chunked conversion later.
+1. Run a live smoke test with a real `.tex` upload, a real unmatched `.pdf` upload, `uv run convert-missing`, `uv run ingest`, and `uv run build-wiki`.
+2. If conversion quality is noisy on real PDFs, add review heuristics or chunked conversion later.

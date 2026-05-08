@@ -11,9 +11,11 @@ This repository is configured for a private Streamlit Community Cloud deployment
 
 Before deploying, build both search artifacts on your machine.
 
-1. Put your study files in `data/latex/<course>/` and `data/pdf/<course>/`
-2. Set local environment variables in `.env`
-3. Run:
+1. Put ingest-ready study files in `data/md/<course>/`
+2. Keep raw source artifacts in `data/latex/<course>/`, `data/pdf/<course>/`,
+   `data/unmatched-latex/<course>/`, or `data/unmatched-pdf/<course>/` as needed
+3. Set local environment variables in `.env`
+4. Run:
 
 ```bash
 uv sync
@@ -104,13 +106,16 @@ This is the v1 access-control model. There is no custom login page in this versi
 When the corpus changes:
 
 1. Review and merge any upload pull requests
-2. Confirm the merged files landed under `data/latex/` or `data/pdf/`
-3. Re-run `uv run ingest` locally
-4. Re-run `uv run build-wiki` locally
-5. Review `data/wiki_report.md` for bad splits, contradictions, or weak topic pages
-6. Commit the updated `data/chroma_db/`, `data/wiki.sqlite3`, and `data/wiki_report.md`
-7. Push to GitHub
-8. Let Streamlit redeploy or manually reboot the app
+2. Confirm ingest-ready Markdown landed under `data/md/`, or convert raw files
+   from `data/latex/`, `data/pdf/`, `data/unmatched-latex/`, or
+   `data/unmatched-pdf/` into reviewed Markdown first
+3. Run `uv run convert-missing` if raw files still need canonical Markdown
+4. Re-run `uv run ingest` locally to rebuild embeddings for all current Markdown
+5. Re-run `uv run build-wiki` locally
+6. Review `data/wiki_report.md` for bad splits, contradictions, or weak topic pages
+7. Commit the updated `data/chroma_db/`, `data/wiki.sqlite3`, and `data/wiki_report.md`
+8. Push to GitHub
+9. Let Streamlit redeploy or manually reboot the app
 
 ## 7. What not to do
 
