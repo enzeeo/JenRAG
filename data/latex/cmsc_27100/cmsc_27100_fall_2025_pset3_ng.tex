@@ -1,0 +1,98 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{microtype}
+
+\title{CMSC 27100---Problem Set 3 Solutions}
+\author{University of Chicago, Autumn 2025}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section*{Problems}
+
+\begin{enumerate}[leftmargin=*]
+  \item Prove that every positive integer can be written as the sum of distinct powers of two.
+
+  By distinct powers of two, we mean that a power of two is used at most once in the sum. For example,
+  \[
+    23 = 2^0 + 2^1 + 2^2 + 2^4 = 1 + 2 + 4 + 16.
+  \]
+  Here, the powers 0, 1, 2, and 4 are used once in the sum and all others do not appear in the sum.
+
+  \textbf{Solution.} We proceed by induction on positive integers $n$.
+
+  \textbf{Base case.} The base case is $n=1$, since we are concerned with positive integers. Since $1=2^0$, the base case holds.
+
+  \textbf{Inductive case.} Let $k$ be an arbitrary positive integer. We assume that all integers $1 \le j \le k$ can be written as a sum of distinct powers of two. Let $n = k + 1$. We consider two cases.
+
+  Suppose $k$ is even. In this case we can write $k = 2m$, for some integer $m$. Since $m \le k$, by our inductive hypothesis $m$ is written as the sum of distinct powers of two, say
+  \[
+    m = 2^{i_1} + 2^{i_2} + \cdots + 2^{i_\ell},
+  \]
+  with $0 \le i_1 < i_2 < \cdots < i_\ell$. Then $2m$ is also a sum of distinct powers of two, with
+  \[
+    2m = 2\left(2^{i_1} + 2^{i_2} + \cdots + 2^{i_\ell}\right)
+       = 2^{i_1+1} + 2^{i_2+1} + \cdots + 2^{i_\ell+1}.
+  \]
+  Observe that $2^0$ cannot be present in the sum. Then we have
+  \[
+    k+1 = 2m + 1 = 2^{i_1+1} + 2^{i_2+1} + \cdots + 2^{i_\ell+1} + 2^0.
+  \]
+  So $k+1$ can be written as a sum of distinct powers of two.
+
+  Now, suppose that $k$ is odd. Then $k+1$ is even. We can write $k+1 = 2m$ for some integer $m$. Since $m \le k$, by our inductive hypothesis $m$ is written as the sum of distinct powers of two, say
+  \[
+    m = 2^{i_1} + 2^{i_2} + \cdots + 2^{i_\ell},
+  \]
+  with $0 \le i_1 < i_2 < \cdots < i_\ell$. Then $2m$ is also a sum of distinct powers of two, with
+  \[
+    2m = 2\left(2^{i_1} + 2^{i_2} + \cdots + 2^{i_\ell}\right)
+       = 2^{i_1+1} + 2^{i_2+1} + \cdots + 2^{i_\ell+1}.
+  \]
+  So $k+1$ can be written as a sum of distinct powers of two.
+
+  \textbf{Notes.}
+  \begin{itemize}
+    \item Here, it's necessary to use strong induction since we require knowledge of the composition of integers beyond just $k$ in order to guarantee that our composition for $k+1$ involves distinct powers of two.
+    \item What this result is really about is the binary representation of integers. Since each power of two is involved at most once, this corresponds to a bit being either 0 or 1.
+  \end{itemize}
+
+  \item Suppose $a = p_1^{c_1} \cdots p_k^{c_k}$ and $b = p_1^{d_1} \cdots p_k^{d_k}$, where $p_1, \ldots, p_k$ are primes and $c_1, \ldots, c_k, d_1, \ldots, d_k$ are non-negative integers. Prove that $a \mid b$ if and only if $a^2 \mid b^2$.
+
+  \textbf{Solution.} Suppose that $a \mid b$. Then by divisibility, $a \cdot n = b$ for some integer $n$. This gives us
+  \[
+    b^2 = (a \cdot n)^2 = a^2 \cdot n^2.
+  \]
+  Since $n^2$ is also an integer, we can conclude that $a^2 \mid b^2$.
+
+  Now, suppose that $a^2 \mid b^2$. We can write
+  \[
+    a^2 = \left(p_1^{c_1} \cdots p_k^{c_k}\right)^2 = p_1^{2c_1} \cdots p_k^{2c_k},
+  \]
+  and
+  \[
+    b^2 = \left(p_1^{d_1} \cdots p_k^{d_k}\right)^2 = p_1^{2d_1} \cdots p_k^{2d_k}.
+  \]
+  Since $a^2 \mid b^2$, we have $2c_i \le 2d_i$ for each $1 \le i \le k$. Therefore, $c_i \le d_i$ for each $1 \le i \le k$. Then by the proposition from Discussion, we have $a \mid b$.
+
+  \textbf{Notes.} The first direction involves applying divisibility rules. The second direction requires the use of the given prime decomposition. A common mistake that's made is the attempted use of division and square root operations. These are forbidden in number theory, since the operations do not guarantee integer outputs. This is why it is necessary to make use of the proposition from Discussion.
+
+  \item Let $n$ be an integer that can be written as $3m+2$, where $m$ is a non-negative integer. Prove that $n$ has a prime factor of the same form (i.e. one of the prime factors can be written as $3p+2$, where $p$ is a non-negative integer).
+
+  \textbf{Solution.} Since $n = 3m+2$, we have $n-2 = 3m$, so $3 \mid n-2$ and therefore $n \equiv 2 \pmod 3$. Let $n = p_1p_2 \cdots p_k$ be the prime factorization of $n$ where each $p_i$ is prime for $1 \le i \le k$. We will consider each $p_i \pmod 3$. There are three cases to consider: $p_i \equiv 0, 1, 2 \pmod 3$.
+
+  First, suppose that there exists $p_i$ with $p_i \equiv 0 \pmod 3$. Then $n = p_1 \cdots p_k \equiv 0 \pmod 3$, which contradicts $n \equiv 2 \pmod 3$. Therefore, $p_i \equiv 1 \pmod 3$ or $p_i \equiv 2 \pmod 3$.
+
+  Suppose then that $p_i \equiv 1 \pmod 3$ for all $1 \le i \le k$. That is, there is no $p_i$ of the form $3j+2$. Then we have $p_1p_2 \cdots p_k \equiv 1 \pmod 3$. But this contradicts our premise that $p_1p_2 \cdots p_k = n \equiv 2 \pmod 3$. So there must exist $p_i$ with $p_i \equiv 2 \pmod 3$.
+
+  \textbf{Notes.} It's not necessary to use modular arithmetic in this proof, though it does make things much simpler. The difference is instead of arguing that $p_i \equiv t \pmod 3$, the argument is about $p_i$ being of the form $3m+t$. Then one observes that a product of the form
+  \[
+    (3m_1+1)(3m_2+1)\cdots(3m_k+1)
+  \]
+  will have the form $3m' + 1$: any product with a $3m_i$ term will have a 3 that can be factored out, so they can all be collected into $3m'$ and there will be a 1 term from the product of all 1 terms.
+\end{enumerate}
+
+\end{document}

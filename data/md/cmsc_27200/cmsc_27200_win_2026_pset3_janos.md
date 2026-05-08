@@ -1,0 +1,407 @@
+# Problem Set 3
+**CMSC 27200: Theory of Algorithms**
+_Assigned January 20, 2026, Due January 28, 2026_
+
+# Problem 1: Recurrence Relations (30 points, 5 extra credit points available)
+Solve each of the following recurrence relations with the given initial value(s). Show your work.
+- (a) 10 points: $T(n) = T(\frac{n}{2}) + n$, $T(1) = 1$
+- (b) 10 points: $T(n) = 4T(\frac{n}{2}) + 3n^2$, $T(1) = 3$
+- (c) 10 points: $T(n) = 4T(\frac{n}{2}) + n^2 + 3$, $T(1) = 2$
+- (d) 5 points extra credit: $T(n) = 6T(\frac{n}{2}) - 8T(\frac{n}{4}) + 6n + 5$, $T(1) = 1$, $T(2) = 6$
+
+# Problem 2: Finding the $k$th Element (20 points)
+You are given an array $A$ of length $n$ and an array $B$ of length $m$, both sorted in increasing order of their elements. Give an $O(\log(n) + \log(m))$ time algorithm to find the $k$th smallest element of the union of $A$ and $B$. For example, if array $A$ has the elements $1,4,8,10$, array $B$ has the elements $3$, $5$, $6$, $9$, and $k = 6$, then your algorithm should return $8$.
+
+You may assume that $A$ and $B$ do not have any elements in common. You should prove that your algorithm works and argue that it indeed runs in $O(\log(n) + \log (m))$ time. Hint is available.
+
+# Problem 3: The Mafia Game (20 points)
+
+A group of $n > 2$ friends are playing a game of Mafia. In each round of this game, the $n$ players can select any subset of the $n$ players to interrogate. Some number of the players are **Mafia**, and they will be revealed during the interrogation.
+Denote by $[n] = \{1, \cdots, n\}$ the set of $n$ players.
+
+  - (a) 10 points: Suppose that there is only one Mafia member among the $n$ players.
+    In this case, we may represent the interrogation as a function $I$ that takes as input any non-empty subset $S \subseteq [n]$ and outputs a boolean in $\{True, False\}$ indicating whether the subset contains a Mafia member. More formally, if $i$ is Mafia, then $i \in S \iff I(S) = True$.
+
+    Provide a description (in words) of a divide-and-conquer procedure that allows the players to identify the mafia member in $O(\log n)$ interrogations.
+
+    You need to show that this procedure always finds the Mafia and argue that your procedure  only takes $O(\log n)$ tests.
+  - (b) 10 points: Suppose instead that there are two Mafia in the group of $n$ players. Furthermore, they can cover each other's tracks in the interrogation: if both are in the same interrogation, then the players won't be able to detect that they are Mafia!
+
+Formally, there exist two players $i \neq j$ (who are Mafia) such that
+    \[
+    I(S) =
+\begin{cases}
+        False & \text{If neither $i$ nor $j$ are in $S$}, <br>
+        True & \text{If exactly one of $i$ or $j$ are in $S$}, <br>
+        False & \text{If both $i$ and $j$ are in $S$}. <br>
+\end{cases}
+    \]
+
+Describe a procedure for selecting subsets to interrogate that allows the players to identify both Mafia in $O(\log n)$ interrogations. You may invoke your algorithm from part (a).
+
+    Sketch a proof that your procedure is correct and that it takes $O(\log n)$ interrogations.
+
+# Problem 4: Rephrasing of Problem 5 in Chapter 5 of Kleinberg-Tardos (20 points)
+Given $n$ lines $\{y = {a_i}x + b_i: i \in [n]\}$, give an $O(n \log(n))$ time algorithm to find all of the lines which can be seen from above without passing through another line. In other words, find all $i \in [n]$ with the property that there exists $x \in \mathbb{R}$ such that  ${a_i}x + b_i \geq {a_j}x + b_j$ for all $j \in [n] \setminus \{i\}$.
+
+You should explain why your algorithm works and takes $O(n \log(n))$ time. Hint is available.
+
+ **Hint:**<br>
+2. At each step, you should try and narrow down the range of elements to consider by half for at least one of the two arrays.<br>
+<br>
+4. You can divide up the lines based on their slope. If you solve the problem for the subset of lines with smaller slopes and the subset of lines with larger slopes, can you combine your solutions to obtain a solution for the entire problem?
+
+
+---
+# Conversion Note
+This file uses the provided starter TeX for the original problem statements and TikZ graph relationships, then includes the full solution text extracted from the matching PDF. The graph drawings do not need to be pixel-identical to the PDF; the directed edges and weights are preserved in the starter TeX where provided.
+
+
+---
+# Full Solution Text Extracted from PDF
+```text
+                                      Problem Set 3
+                           CMSC 27200: Theory of Algorithms
+
+
+Problem 1: Recurrence Relations (30 points, 5 extra credit points
+available)
+Solve each of the following recurrence relations with the given initial value(s). Show your work.
+
+  (a) 10 points: T (n) = T ( n2 ) + n, T (1) = 1
+      Solution:
+                                           n
+                                T (n) = T ( ) + n
+                                           2
+                                           n    n
+                                      = T( ) + + n
+                                           4    2
+                                           n    n n
+                                      = T( ) + + + n
+                                           8    4 2
+                                       ..
+                                        .
+                                          n           n n         n
+                                     = T ( k ) + n + + + . . . + k-1
+                                          2           2    4    2
+                                                   k-1
+                                          n        X 1
+                                     = T( k) + n
+                                          2        i=0
+                                                        2i
+                                                    1
+                                          n         k - 1
+                                     = T ( k ) + n 21
+                                          2         2
+                                                      -1
+                                          n
+                                     = T ( k ) + 2n(1 - 2-k )
+                                          2
+      Let k = log2 n, we have
+                                                           1
+                                  T (n) = T (1) + 2n(1 -     ) = 2n - 1.
+                                                           n
+
+
+ (b) 10 points: T (n) = 4T ( n2 ) + 3n2 , T (1) = 3
+
+
+                                                   1
+
+--- page break ---
+    Solution:
+                                             n
+                                T (n) = 4T ( ) + 3n2
+                                             2
+                                              n          n
+                                          2
+                                      = 4 T ( ) + 4 ? 3( )2 + 3n2
+                                              4          2
+                                              n           n
+                                      = 43 T ( ) + 42 ? 3( )2 + 2 ? 3n2
+                                              8           4
+                                       ..
+                                        .
+                                              n
+                                      = 4k T ( k ) + k ? 3n2
+                                              2
+    Let k = log2 n, we have
+
+              T (n) = 4log2 n T (1) + log2 n ? 3n2 = 3n2 + 3n2 log2 n = 3n2 (1 + log2 n).
+
+
+(c) 10 points: T (n) = 4T ( n2 ) + n2 + 3, T (1) = 2
+    Solution:
+                               n
+                   T (n) = 4T ( ) + n2 + 3
+                               2
+                                n      n
+                         = 4 T ( ) + 4( )2 + n2 + 4 ? 3 + 3
+                             2
+                                4      2
+                                n     2 n 2
+                         = 4 T ( ) + 4 ( ) + 2n2 + (42 ? 3 + 4 ? 3 + 3)
+                             3
+                                8       4
+                                 n     3 n 2
+                             4
+                         = 4 T ( ) + 4 ( ) + 3n2 + (43 ? 3 + 42 ? 3 + 4 ? 3 + 3)
+                                16       8
+                          ..
+                           .
+                                 n
+                         = 4k T ( k ) + kn2 + 3(1 + 4 + . . . + 4k-1 )
+                                 2
+                                 n
+                         = 4k T ( k ) + kn2 + (4k - 1)
+                                 2
+    Let k = log2 n, we have
+
+                T (n) = 4log2 n T (1) + n2 log2 n + (4log2 n - 1) = n2 log2 n + 3n2 - 1.
+
+
+(d) 5 points extra credit: T (n) = 6T ( n2 ) - 8T ( n4 ) + 6n + 5, T (1) = 1, T (2) = 6
+    Solution: Consider the homogeneous part T0 (n) = 6T0 ( n2 ) - 8T0 ( n4 ). Plugging in T0 (n) =
+                          p      p
+    np , we have np = 6 n2p -8 n4p . Dividing both sides by np yields 1- 26p + 282p = 0. Let x = 2-p .
+    Then 1 - 6x + 8x2 = (1 - 4x)(1 - 2x) = 0, so x = 12 or 14 , which implies p = 1 or 2. Thus,
+    the vector space of solutions to the homogeneous recurrence is {An2 + Bn : A, B ? R}.
+    Since n is a solution to the homogeneous part, we try Tp (n) = an log2 n + b instead. Plug-
+    ging it into the recurrence relation, we have
+
+
+                                                 2
+
+--- page break ---
+                              n        n         n      n     
+            an log2 n + b = 6 a log2 + b - 8 a log2 + b + 6n + 5
+                              an2      2         4  an4
+                                            an                       an     
+                          =6       log2 n -    +b -8        log2 n -     + b + 6n + 5
+                                2            2           4            2
+                          = an log2 n + (-3a + 4a + 6)n + (6b - 8b + 5).
+
+      So we have a = -6 and b = 35 .
+      Therefore, the general solution is T (n) = An2 + Bn - 6n log2 n + 35 . Since T (1) = 1 and
+      T (2) = 6, we have A + B + 35 = 1 ==> A + B = - 23 and 4A + 2B - 12 + 35 = 6 ==>
+      4A + 2B = 49 3
+                     . Solving this gives A = 53
+                                               6
+                                                 and B = - 19
+                                                           2
+                                                              . Thus, the solution is
+
+                                           53 2 19               5
+                                 T (n) =      n - n - 6n log2 n + .
+                                            6    2               3
+
+
+Problem 2: Finding the kth Element (20 points)
+You are given an array A of length n and an array B of length m, both sorted in increasing order of
+their elements. Give an O(log(n) + log(m)) time algorithm to find the kth smallest element of the
+union of A and B. For example, if array A has the elements 1, 4, 8, 10, array B has the elements 3,
+5, 6, 9, and k = 6, then your algorithm should return 8.
+    You may assume that A and B do not have any elements in common. You should prove that
+your algorithm works and argue that it indeed runs in O(log(n) + log(m)) time. Hint is available.
+    Solution:
+kth element(A, B, k)
+
+   1. If |A| = 0, return B[k].
+
+   2. If |B| = 0, return A[k].
+
+   3. Let mA = ?|A|/2? and mB = ?|B|/2?.
+
+        (i) If k < mA + mB , then return kth element(A[1, . . . , mA - 1], B, k) if A[mA ] >
+            B[mB ], or kth element(A, B[1, . . . , mB - 1], k) otherwise.
+       (ii) If k >= mA + mB , then return kth element(A, B[mB + 1, . . . , |B|], k - mB ) if
+            A[mA ] > B[mB ], or kth element(A[mA + 1, . . . , |A|], B, k - mA ) otherwise.
+
+Correctness: We prove that if A and B are sorted arrays of length n and m, and k ? [m + n],
+then the algorithm correctly returns the kth element of the union of A and B (denoted by A ? B)
+by strong induction on m + n. The base cases are m = 0 or n = 0, in which case the algorithm
+executes either step 1 or 2, which gives the correct value by construction.
+Now consider arbitrary m + n where m >= 1 and n >= 1. If k < mA + mB , then the algorithm
+will get to step 3(i). It suffices to show that the elements discarded by the recursive call have
+higher rank than k in A ? B. If A[mA ] > B[mB ], since A and B are sorted, for j >= mA we
+
+
+                                                3
+
+--- page break ---
+have A[j] >= A[mA ] > A[i] for i ? {1, . . . , mA - 1} and A[j] >= A[mA ] > B[mB ] >= B[i] for
+i ? {1, . . . , mB }. Thus, there are at least mA + mB - 1 >= k many elements in A ? B that are less
+than A[j], and hence the kth element in A?B is the same as the kth element in A[1, . . . , mA -1]?B.
+Since n > 1, ?n/2? - 1 < n, and the correctness follows by applying the inductive hypothesis to
+the recursive call. The argument for the second case in step 3(i) is similar.
+If k >= mA + mB , then the algorithm will get to step 3(ii). If A[mA ] > B[mB ], we claim that for
+j <= mB , the rank of B[j] is less than k in A ? B and hence removing it will reduce the rank of the
+kth element in A ? B by one. We count the number of elements in A ? B that are less than B[j].
+Since A and B are sorted, we have B[j] < B[i] for i > j and B[j] <= B[mB ] < A[mA ] <= A[i] for
+i >= mA . There are at most j - 1 + mA - 1 <= mA + mB - 2 many elements in A ? B that are less
+than B[j], and the rank of B[j] is at most mA + mB - 1 <= k - 1. So the (k - mB )th element in
+A ? B[mB + 1, . . . , m] is the same as the kth element in A ? B. Since m >= 1, m - ?m/2? < m.
+By strong induction, the recursive call computes the (k - mB )th element in A ? B[mB + 1, . . . , m]
+correctly. The case of A[mA ] < B[mB ] is similar.
+
+Efficiency: At each recursive call, we reduce the length of A or B by half. Moreover, the rest
+of the operations in step 3 take constant time. It takes O(log m + log n) many recursive calls to
+reduce one of the arrays to have length 0, at which point it takes O(1) time to output A[k] or B[k].
+
+
+Problem 3: The Mafia Game (20 points)
+A group of n > 2 friends are playing a game of Mafia. In each round of this game, the n players
+can select any subset of the n players to interrogate. Some number of the players are Mafia, and
+they will be revealed during the interrogation. Denote by [n] = {1, ? ? ? , n} the set of n players.
+
+  (a) 10 points: Suppose that there is only one Mafia member among the n players. In this case,
+      we may represent the interrogation as a function I that takes as input any non-empty subset
+      S ? [n] and outputs a boolean in {T RUE, FALSE} indicating whether the subset contains a
+      Mafia member. More formally, if i is Mafia, then i ? S <==> I(S) = T RUE.
+      Provide a description (in words) of a divide-and-conquer procedure that allows the players
+      to identify the mafia member in O(log n) interrogations.
+      You need to show that this procedure always finds the Mafia and argue that your procedure
+      only takes O(log n) tests.
+      Solution: We can run a simple divide-and-conquer scheme by splitting P in half and testing
+      half. For example, we may begin by testing the set P = {P1 , P2 , ..., Pn/2 }. If this returns
+      T RUE then we have found a set of size n/2 with a mafia member, in which case we can
+      recursively run the algorithm, or else the mafia member is in the other half so we can recurse
+      on that half instead.
+
+      Correctness: Note that the Mafia member must either be in the set we interrogate or the
+      set we don't interrogate, and our interrogation identifies which set the mafia is in and re-
+      curses on that set. As such, we call our algorithm on continuously decreasing sets with the
+      mafia in it, so eventually we will find a set of size one containing the Mafia.
+
+
+                                                 4
+
+--- page break ---
+    Efficiency: In each step, we are cutting the size of set of potential Mafia down by half,
+    using one test. Thus, our algorithm follows the recurrence relation
+                                                      n
+                                           T (n) = T ( ) + 1,
+                                                      2
+    which by the master theorem gives us T (n) = log(n).
+
+(b) 10 points: Suppose instead that there are two Mafia in the group of n players. Furthermore,
+    they can cover each other's tracks in the interrogation: if both are in the same interrogation,
+    then the players won't be able to detect that they are Mafia!
+    Formally, there exist two players i ?= j (who are Mafia) such that
+                                 ?
+                                 ?FALSE If neither i nor j are in S,
+                                 ?
+                        I(S) = T RUE If exactly one of i or j are in S,
+                                 ?
+                                   FALSE If both i and j are in S.
+                                 ?
+
+
+    Describe a procedure for selecting subsets to interrogate that allows the players to identify
+    both Mafia in O(log n) interrogations. You may invoke your algorithm from part (a).
+    Sketch a proof that your procedure is correct and that it takes O(log n) interrogations.
+    Solution: Note that, whenever a test returns T RUE, we can simply call the algorithm from
+    part (a). As such, if we find a sequence of O(log n) interrogations where we can guarantee
+    that at least one is T RUE, then we are done.
+    There are many possibilities for potential sequences, but we will only present one of them.
+    Our solution is this: on test i, partition the people into 2i groups, and test every other group.
+    For example, on test 1 we are testing the left half of the people, and on test 3 we are splitting
+    the players into eights and testing the first, third, fifth, and seventh group. After log n tests,
+    we will have split into n different sections, and if none of the other tests returned T RUE then
+    we know this one will.
+
+    Correctness: We only need to show that our procedure outputs T RUE at some point. Note that
+    interrogation 1 tells us both mafia members are in the same half, and test 2 tells us that they
+    are both in the same half of one half (or same quarter). Overall, FALSE outputs for tests 1
+    through i tell us that the two mafia are in the same block of size n/2i , so by test log n, a result
+    of FALSE would indicate that both mafia are in the same block of size 1, which is impossible.
+
+    Efficiency: Note that once we get a T RUE output, we may simply run the procedure from
+    (a) to identify mafia members. We can see that we only need to run log n interrogations to
+    ensure a T RUE output by the argument above. From there, we need to run the procedure
+    from (a) twice, giving us 3 log n = O(log n) interrogations.
+
+
+                                                 5
+
+--- page break ---
+Problem 4: Rephrasing of Problem 5 in Chapter 5 of Kleinberg-
+Tardos (20 points)
+Given n lines {y = ai x + bi : i ? [n]}, give an O(n log(n)) time algorithm to find all of the lines
+which can be seen from above without passing through another line. In other words, find all i ? [n]
+with the property that there exists x ? R such that ai x + bi >= aj x + bj for all j ? [n] \ {i}.
+    You should explain why your algorithm works and takes O(n log(n)) time. Hint is available.
+    Solution: For simplicity, assume no three lines intersect at the same point. We sort the lines by
+their slopes, i.e., by increasing order of ai . Suppose a1 a2 . . . an , assume without loss of generality
+ai ?= aj for all i ?= j, since otherwise the line with smaller b value will be blocked by the other
+line and it will not be visible from above. These line can be removed in O(n) time after sorting the
+slopes.
+
+VisibleLine(S)
+
+   1. If |S| = 1, return S
+
+   2. Let mid = ?|S|/2?
+
+   3. A = VisibleLine(L[1, . . . , mid]) and let n = |A|
+
+   4. B = VisibleLine(L[mid + 1, . . . , |S|]) and let m = |B|
+
+   5. Compute an array L of length n such that L[1] = ? and L[i] equals to the x-coordinate of
+      the intersection between lines A[i1] and A[i] for i = 2, . . . , n
+
+   6. Compute an array R of length m such that R[m] = ? and R[i] equals to the x-coordinate
+      of the intersection between lines B[j] and B[j + 1] for j = 1, . . . , m - 1
+
+   7. i = j = 1
+
+   8. While i <= n and j <= m:
+
+        (i) If L[i] <= R[j] and line A[i] is above line B[j] at x = L[i], i = i + 1
+       (ii) If R[j] <= L[i] and line A[i] is above line B[j] at x = R[j], j = j + 1
+       (iii) Else, return [A[1], . . . , A[i], B[j], . . . , B[m]
+
+Correctness: It suffices to show that the combine step correctly computes the array of lines that are
+visible from above and they are sorted by slopes if the lines in A and B are sorted by slopes and
+all lines in A have less slope than any line in B. Assuming this, by strong inductive hypothesis the
+A and B computed in step 3 and 4 are correct, then the correctness of the combine step completes
+the inductive step.
+Observe that the curve formed by the visible lines is a piecewise linear function with increasing
+slope. More precisely, it is the function f (x) = maxi[n] {ai x + bi }. Let fA (x) and fB (x) be the
+curves formed by the visible lines in A and B respectively. We have f (x) = max{fA (x), fB (x)}.
+Since both fA and fB are piecewise linear with increasing slopes and the slopes in fB are greater
+than the slopes in fA , once they intersect at x0 , fB (x) >= fA (x) for all x >= x0 , i.e., fA is no longer
+
+                                                         6
+
+--- page break ---
+visible but fB becomes visible for x >= x0 .
+In the combine step (steps 5 to 8), the algorithm goes over the intersections between adjacent lines
+in A and the intersections between adjacent lines in B in increasing order of x-coordinate. The al-
+gorithm returns at the first time it witnesses an intersection with x-coordinate x? such that fA (x? ) <
+fB (x? ). Let x?? be the x-coordinate of the previous intersection, then we have fA (x?? ) >= fB (x?? )
+but fA (x? ) < fB (x? ). Thus, fA intersects with fB at some x0 where x?? <= x0 < x? . Since A[i]
+and B[j] are the visible lines when fA intersects with fB , A[1], . . . , A[i] are visible but none of the
+lines in B are visible for x <= x0 . For x > x0 , the lines B[j], . . . , B[m] are visible but none of the
+lines in A are visible. Thus, the set of visible lines is precisely {A[1], . . . , A[i], B[j], . . . , B[m]},
+as desired.
+
+Efficiency: The combine step (steps 5 to 8) takes O(n) time in total and steps 1 to 2 takes O(1)
+time. The running time T (n) satisfies the recurrence relation T (n) = 2T (n/2) + O(n), and the
+solution to this is O(n log n). In the preprocessing step we sort the lines by their slope, which takes
+O(n log n) time. So the total running time is still O(n log n).
+
+
+Hint:
+2. At each step, you should try and narrow down the range of elements to consider by half for at
+least one of the two arrays.
+
+4. You can divide up the lines based on their slope. If you solve the problem for the subset of
+lines with smaller slopes and the subset of lines with larger slopes, can you combine your solutions
+to obtain a solution for the entire problem?
+
+
+                                                     7
+
+--- page break ---
+```

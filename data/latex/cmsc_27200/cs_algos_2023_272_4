@@ -1,0 +1,95 @@
+\section*{Problem \#1}
+
+Let $S$ be the set of cards, and $|S| = n$.
+
+If $n = 1$, return that card.
+
+If $n = 2$, test if they are equivalent, and return either if so.
+
+If $n > 2$, let $S_1$ be the set of the first $\lfloor n/2 \rfloor$ cards (half the cards), and let $S_2$ be the second half.
+
+Run $S_1$ through the algorithm recursively. If a card is returned, then test this against the others. If a card for which there is majority equivalence has not been found, then run $S_2$ through the algorithm.
+
+If a card is returned from $S_2$, test this against the others. If a card for which majority equivalence is found, return it (in which case the answer is yes).
+
+\subsection*{Correctness}
+
+The algorithm looks for a card that is equivalent to half of the cards. If there are more than $n/2$ equivalent cards, then at least one of the two sets $S_1$ or $S_2$ will have more than half the cards also equivalent, so at least one of the two recursive calls will return an equivalent card.
+
+\subsection*{Efficiency / Optimality / Running Time}
+
+Let $T(n)$ be the maximum number of tests for $n$ cards. There are 2 recursive calls and an additional $2n$ tests:
+\[
+T(n) \leq 2T(n/2) + 2n
+\]
+By Master's Theorem, this is $O(n \log n)$.
+
+\section*{Problem \#2}
+
+Check whether the middle element is a lucky entry. If it is, return it. If not, check if the index of the middle element is greater than the value of the element.
+
+If so, then the entry might be to the right of the middle element if it exists. If not, the lucky entry might be to the left.
+
+Run either half through the algorithm recursively. If none exists, return \texttt{NONE}.
+
+\subsection*{Correctness}
+
+We use strong induction on $n$.
+
+\textbf{Base case ($n = 1$):} The algorithm checks if this is lucky and returns it if so; otherwise it returns \texttt{NONE}.
+
+\textbf{Inductive Hypothesis:} If there is a lucky entry, the algorithm will return it; otherwise it will return \texttt{NONE}.
+
+If the middle entry is not lucky, there are two cases:
+
+\textbf{Case 1:} index of middle entry $>$ middle element.
+
+Because the array is sorted, a lucky entry, if it exists, must be between the middle element and element $n$. This gets searched recursively and by the inductive hypothesis will return a lucky entry if it exists.
+
+\textbf{Case 2:} middle entry $<$ middle element.
+
+Similarly, a lucky entry must be between $0$ and the middle element, and this gets searched recursively.
+
+\subsection*{Efficiency}
+
+This is $O(\log n)$ because the array gets repeatedly split in half with each recursive iteration:
+\[
+n,\quad \frac{n}{2},\quad \frac{n}{2^2},\quad \frac{n}{2^3},\quad \dots,\quad \frac{n}{2^k}
+\]
+
+Eventually the length becomes 1:
+\[
+1 = \frac{n}{2^k}
+\]
+so
+\[
+n = 2^k
+\]
+and therefore
+\[
+\log n = \log 2^k = k
+\]
+
+\section*{Problem \#3}
+
+We will iterate through the rows/columns until we find the row/column with the least amount of arrows pointing out of that row/column.
+
+For every column $j \geq 0$, for every row $i < n$, if we find an arrow pointing at an element ``Billy,'' choose that element. Otherwise, check if the arrow is pointing in that column or out.
+
+The row/column with the least amount of arrows pointing out is the one with Billy.
+
+\subsection*{Efficiency}
+
+This is $O(n)$ because there is only one traversal, $i$ from $0$ to $n$ and $j$ from $0$ to $n$.
+
+\subsection*{Correctness}
+
+``Billy'' is in a spot with an arrow pointing at him. We use induction on $n$.
+
+\textbf{Base case:} In a $1 \times 1$, there are zero arrows pointing out, so row 1 column 1 contains Billy. The algorithm will return that.
+
+\textbf{Inductive Hypothesis:} Assume the algorithm finds Billy in an $n \times n$.
+
+Add another row/column and say Billy is in it. Otherwise, by induction the algorithm already found him.
+
+He's in all $n+1$ rows and columns now are the columns with the least amount of arrows pointing out because the row/column containing Billy always contains less.

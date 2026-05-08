@@ -1,0 +1,72 @@
+
+\documentclass[11pt]{article}
+\usepackage{amsmath, amssymb}
+\title{CMSC 27100 --- Problem Set 7 Solutions}
+\date{University of Chicago, Autumn 2025}
+\begin{document}
+\maketitle
+
+\section*{1.}
+Let $P_\otimes$ be the event the broken generator is chosen and let $1^8$ denote the sequence $11111111$.
+
+\[
+\Pr(1^8) = \Pr(1^8|P_\otimes)\Pr(P_\otimes) + \Pr(1^8|\neg P_\otimes)\Pr(\neg P_\otimes)
+\]
+\[
+= 1 \cdot \frac{1}{100} + \left(\frac{1}{2}\right)^8 \cdot \frac{99}{100}
+= \frac{1}{100} + \frac{99}{100}\cdot \frac{1}{256}
+= \frac{355}{25600}
+\]
+
+By Bayes' theorem:
+\[
+\Pr(P_\otimes \mid 1^8) = \frac{1 \cdot \frac{1}{100}}{\frac{355}{25600}} = \frac{256}{355}.
+\]
+
+\section*{2.}
+Let $V' = V \setminus \{w,x\}$.
+
+\textbf{(a)} For any subset $S \subseteq V'$:
+\[
+\Pr(N'(w)=S) = \left(\frac{1}{2}\right)^{n-2}.
+\]
+
+\textbf{(b)} 
+\[
+\Pr(N'(w) \subseteq N'(x)) = \left(\frac{3}{4}\right)^{n-2}.
+\]
+
+\textbf{(c)}
+\[
+\Pr(N'(w) \cup N'(x) = V') = \left(\frac{3}{4}\right)^{n-2}.
+\]
+
+\section*{3.}
+Let $B$ be the number of bridges of length 2.
+
+Define indicator variables $X_{uvw}$:
+\[
+B = \sum_{u,v,w} X_{uvw}.
+\]
+
+By linearity:
+\[
+\mathbb{E}[B] = \sum_{u,v,w} \mathbb{E}[X_{uvw}].
+\]
+
+Probability a triple is a bridge:
+\[
+p^2 (1-p)^{n-2}.
+\]
+
+Number of unordered triples:
+\[
+\frac{1}{2} n(n-1)(n-2).
+\]
+
+Thus:
+\[
+\mathbb{E}[B] = \frac{1}{2} n(n-1)(n-2) p^2 (1-p)^{n-2}.
+\]
+
+\end{document}

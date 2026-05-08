@@ -1,0 +1,265 @@
+%This is my super simple Real Analysis Homework template
+
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[]{amsthm} %lets us use \begin{proof}
+\usepackage{amsmath}
+\usepackage[]{amssymb} %gives us the character \varnothing
+
+\title{Homework 6}
+\author{Aine Zhang}
+\date\today
+%This information doesn't actually show up on your document unless you use the maketitle command below
+
+\begin{document}
+\maketitle %This command prints the title based on information entered above
+
+%Section and subsection automatically number unless you put the asterisk next to them.
+\section*{Problem 1}
+Given function $f (x, y) = x + y$, find the maximum and minimum values of f over the domain
+$${(x, y): 0 \leq y \leq x^2 \text{ and } - 1 \leq x \leq 1}$$
+
+\begin{proof}
+$$f(x,y)= x+y$$
+$$g(x,y)=$$
+Since $\nabla f = (1,1)$ is never zero, there are no interior critical points. So any extrema must be on the boundaries. \\
+The boundary has three parts:
+$y=0$, $-1 \le x \le 1$.
+On this boundary, $f(x,0)=x$. Over $[-1,1]$, the minimum is $-1$ at $x=-1$, and the maximum is $1$ at $x=1$.
+Upper boundary: $y=x^2$, $-1 \le x \le 1$.
+Substitute into $f$: $f(x,x^2)=x+x^2.$ \\
+Let $h(x)=x+x^2.$ Then $h'(x)=1+2x.$
+Setting $h'(x)=0$ gives $1+2x=0  \Rightarrow  x=-\frac12.$
+Then
+\[
+h\!\left(-\frac12\right)
+=
+-\frac12+\frac14
+=
+-\frac14. \qquad
+h(-1)=0,  h(1)=2.
+\]
+
+On this boundary, the minimum is $-\frac14$ at 
+$\left(-\frac12,\frac14\right)$, 
+and the maximum is $2$ at $(1,1)$. \\
+Vertical boundaries: $x=-1$ and $x=1$.
+If $x=-1$, then $0 \le y \le 1$, and $f(-1,y)=-1+y.$
+This is minimized at $y=0$ giving $-1$, 
+and maximized at $y=1$ giving $0$. \\
+If $x=1$, then $0 \le y \le 1$, and $f(1,y)=1+y.$
+
+This is minimized at $y=0$ giving $1$, 
+and maximized at $y=1$ giving $2$.
+
+So, we get the minimum -1 at $(-1,0)$ and maximum value 2  $(1,1)$.
+
+\end{proof}
+
+\clearpage %Gives us a page break before the next section. Optional.
+
+\section*{Exercise 4.8.7., Problem 2}
+
+Let $x_1, x_2,.., x_n$ be positive real numbers. Prove the arithmetic-geometric mean inequality,
+$$(x_1x_2 . . . x_n)^{\frac{1}{n}} \leq \frac{(x_1 + x_2 + ... + x_n)}{n} .$$
+\textit{Hint}: Consider the function $f(x_1, x_2, ... , x_n) = \frac{x_1+x_2+...+x_n}{n}$ subject to the constraint $x_1x_2... x_n = c$, a constant.
+
+\begin{proof}
+By the hint, we construct function $f(x_1, x_2, ... , x_n) = \frac{x_1+x_2+...+x_n}{n}$ subject to the constraint $x_1x_2... x_n = c$, a constant. So 
+$$f(x_1, x_2, ... , x_n) = \frac{x_1+x_2+...+x_n}{n}$$
+$$ g(x_1, x_2, ... , x_n)=(x_1x_2 ... x_n)=c \Rightarrow (x_1x_2 ... x_n)-c =0$$
+$$\nabla f= [\frac{1}{n}, \frac{1}{n}, ....\frac{1}{n}],  \nabla g=[x_2x_3...x_n,x_1x_3...x_n, ...x_1x_2...x_{n-1}]$$
+$$\nabla f=\lambda \nabla g=\begin{cases}
+    \lambda x_2x_3....x_n = \frac{1}{n} \\
+    \lambda x_1x_3....x_n = \frac{1}{n}\\
+    ... = \frac{1}{n} \\
+    \lambda x_1x_2...x_{n-1}=\frac{1}{n}
+\end{cases}$$
+$$\lambda \neq 0 $$ so we know $x_2x_3....x_n=x_1x_3...x_n=x_1x_2...x_{n-1}$. Since all $x_1...x_n$ are positive reals, we can cancel terms, and we get the equality holds only if $x_1=x_2=...=x_n$. So, when all $x$'s are equal to each other, this is a critical point. \\
+Let's say $x_1=x_2...=x_n=x$, then $\frac{x_1+x_2+...x_n}{n}=\frac{x+x+...+x}{n}=\frac{x_n}{n}=x$, and $x_1x_2...x_n=c \Rightarrow x^n=c, x =c^\frac{1}{n}$. \\
+This point is a minimum, since the sum of a series of numbers is minimized when all the numbers are equal to each other. So, the critical point is a minimum of $f$ under the constraint $g.$ Thus, we know $\frac{x_1+x_2+...x_n}{n} \geq c ^\frac{1}{n}=(x_1....x_n)^\frac{1}{n}.$ Rearranging the equation gives us $(x_1x_2 . . . x_n)^{\frac{1}{n}} \leq \frac{(x_1 + x_2 + ... + x_n)}{n} .$
+\end{proof}
+
+\clearpage
+
+\section*{Exercise 4.8.12., Problem 3}
+Consider the plane defined by $P (x, y, z) = Ax + By + Cz + D = 0$ and the ellipsoid defined by $E(x, y, z) = \frac{x^2}{a^2}+ \frac{y^2}{b^2} +\frac{z^2}{c^2}-1=0$
+\subsection*{i. }
+Find conditions on $A, B, C, D, a, b, c$ such that the plane and the ellipsoid do not intersect.
+\begin{proof}
+The plane intersects the ellipsoid if and only if there exists a point on the ellipsoid satisfying $Ax+By+Cz = -D.$ \\
+So, we can model this in a Lagrangian multiplier problem if we consider $L(x,y,z)=Ax+By+Cz$ restricted to the ellipsoid. 
+
+
+    $f(A)\cdot f(B) \leq 0 \Leftrightarrow D^2-(A^2a^2+B^2b^2+C^2c^2) \leq 0$
+
+
+Using Lagrange multipliers, one finds that the maximum and minimum
+values of $L$ on the ellipsoid are
+$$g_1=\frac{\sqrt{A^2a^2+B^2b^2+C^2c^2}+D}{\sqrt{A^2+B^2+C^2}}$$
+$$g_2=\frac{-\sqrt{A^2a^2+B^2b^2+C^2c^2}+D}{\sqrt{A^2+B^2+C^2}}$$
+Therefore, $Ax+By+Cz$ takes all values between $-\sqrt{A^2a^2+B^2b^2+C^2c^2}$ and $\sqrt{A^2a^2+B^2b^2+C^2c^2}.$
+The plane intersects the ellipsoid if and only if $-D$ lies in this interval, which is
+\[
+|D| \le \sqrt{A^2a^2+B^2b^2+C^2c^2}.
+\]
+
+The plane and ellipsoid do not intersect when
+\[
+|D| > \sqrt{A^2a^2+B^2b^2+C^2c^2}.
+\]
+
+\end{proof}
+\subsection*{ii. }
+Find the minimum distance between the plane and the ellipsoid when they do not intersect.
+
+\begin{proof}
+
+The distance from a point $(x,y,z)$ to the plane is$
+d(x,y,z)=\frac{|Ax+By+Cz+D|}{\sqrt{A^2+B^2+C^2}}.$
+
+Since we the plane and ellipsoid do not intersect, the sign of 
+$Ax+By+Cz+D$ is constant, so we can minimize $f(x,y,z)=Ax+By+Cz+D$ subject to the constraint $
+g(x,y,z)=\frac{x^2}{a^2}+\frac{y^2}{b^2}+\frac{z^2}{c^2}-1=0.
+$ \\
+
+Using Lagrange multipliers, we compute
+
+$$
+\nabla f = (A,B,C), \qquad \nabla g = \left(\frac{2x}{a^2},\frac{2y}{b^2},\frac{2z}{c^2}\right).
+$$
+
+We set $\nabla f=\lambda \nabla g,$ so
+
+$$
+(A,B,C)=\lambda\left(\frac{2x}{a^2},\frac{2y}{b^2},\frac{2z}{c^2}\right).
+$$
+
+This gives
+
+$$
+x=\frac{A a^2}{2\lambda}, 
+y=\frac{B b^2}{2\lambda}, 
+z=\frac{C c^2}{2\lambda}. \quad \Rightarrow \quad 
+\frac{A^2 a^4}{4\lambda^2 a^2}
++
+\frac{B^2 b^4}{4\lambda^2 b^2}
++
+\frac{C^2 c^4}{4\lambda^2 c^2}
+=1.
+$$
+
+Simplifying,
+
+$$
+\frac{A^2 a^2 + B^2 b^2 + C^2 c^2}{4\lambda^2}=1.
+$$
+
+So, $4\lambda^2=A^2 a^2 + B^2 b^2 + C^2 c^2,$ and
+
+$$
+2\lambda=\pm \sqrt{A^2 a^2 + B^2 b^2 + C^2 c^2}.
+$$
+
+Now compute the extreme values of $Ax+By+Cz$:
+
+$$
+Ax+By+Cz
+=
+\frac{A^2 a^2 + B^2 b^2 + C^2 c^2}{2\lambda}
+=
+\pm \sqrt{A^2 a^2 + B^2 b^2 + C^2 c^2}.
+$$
+
+Therefore the minimum value of $|Ax+By+Cz+D|$ on the ellipsoid is
+
+$$
+|D|-\sqrt{A^2 a^2 + B^2 b^2 + C^2 c^2},
+$$
+
+since that's also what we assumed in part (i). \\
+Hence the minimum distance between the plane and the ellipsoid is
+$$
+\frac{|D|-\sqrt{A^2 a^2 + B^2 b^2 + C^2 c^2}}{\sqrt{A^2+B^2+C^2}}.
+$$
+\end{proof}
+\clearpage
+
+\section*{Exercise 4.8.14}
+ Consider two nonparallel planes in $\mathbb{R}^3$. Find the point on their line of intersection closest to the origin in $\mathbb{R}^3$.
+
+\begin{proof}
+     Lets say there are two nonparallel planes $M$ and $N$, where $$M(x,y,z)=Ax+By+Cz=D, N(x,y,z)=Ex+Fy+Gz=H.$$ The line where they intersect is when both equations are satisfied and share the same $x,y,z$. We want to find the smallest distance between $P$ and $(0,0,0).$\\
+     Let $f$ be the distance formula $$f(x,y,z)=x^2+y^2+z^2,$$ and $M$ and $N$ act as constraints on $f.$\\
+     We want to use Lagrangian multipliers, so we find $$\nabla f=[2x, 2y, 2z], \nabla M =[A, B, C], \nabla N=[E,F,G]$$
+     By applying the multipliers, we want
+     $ \nabla f = \lambda_1 \nabla M + \lambda_2\nabla N$, which leads us to 
+     $$\begin{bmatrix}
+         2x \\
+         2y \\
+         2z \\
+ \end{bmatrix} =\lambda_1 \begin{bmatrix}
+         A \\
+         B \\
+         C \\
+     \end{bmatrix}+\lambda_2\begin{bmatrix}
+         E \\
+         F\\
+         G
+     \end{bmatrix}$$
+     In order to solve for $\begin{bmatrix}
+         x & y &z
+     \end{bmatrix},$ we want to plug in $M$ and $N$ into $\begin{bmatrix}
+         x & y & z
+     \end{bmatrix}=\lambda_1 \begin{bmatrix}
+         A & B & C
+     \end{bmatrix} + \lambda_2 \begin{bmatrix}
+         E & F & G
+     \end{bmatrix}. $
+     If we denote $$a = [A,B,C] \cdot [A, B, C], b =[A,B,C]\cdot [E,F,G], c=[E,F,G]\cdot [E,F,G], $$
+     plugging this into the equations we obtain $a\lambda_1+b\lambda_2=D, b\lambda_1+c\lambda_2=H\Rightarrow \lambda_1=\frac{cD-bH}{ac-b^2}, \lambda_2=\frac{-bD+aH}{ac-b^2}$
+     Since the planes are nonparallel, their normal vectors $(A,B,C)$ and $(E,F,G)$ are not multiples of one another, so $ac-b^2 \neq 0$.
+     So the point on the line of intersection closest to the origin where
+     $$
+     P
+     =
+     \lambda_1(A,B,C)
+     +
+     \lambda_2(E,F,G),
+     $$
+     where
+     $$
+     \lambda_1=\frac{cD-bH}{ac-b^2}, 
+     \qquad 
+     \lambda_2=\frac{-bD+aH}{ac-b^2}.
+     $$
+     Solving this gives us the coordinates 
+    
+    \[
+    x
+    =
+    \frac{
+    (cD - bH)A + (aH - bD)E
+    }{ac - b^2},
+    \]
+    
+    \[
+    y
+    =
+    \frac{
+    (cD - bH)B + (aH - bD)F
+    }{ac - b^2},
+    \]
+    
+    \[
+    z
+    =
+    \frac{
+    (cD - bH)C + (aH - bD)G
+    }{ac - b^2}.
+    \]
+\end{proof} 
+
+
+\end{document}

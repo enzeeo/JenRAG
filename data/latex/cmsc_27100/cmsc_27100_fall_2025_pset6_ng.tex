@@ -1,0 +1,54 @@
+
+\documentclass[11pt]{article}
+\usepackage{amsmath, amssymb}
+\title{CMSC 27100 --- Problem Set 6 Solutions}
+\date{University of Chicago, Autumn 2025}
+\begin{document}
+\maketitle
+
+\section*{1.}
+Let $G$ be connected and $T$ a spanning tree. If $G$ is not bipartite, prove there is an odd cycle using exactly one edge not in $T$.
+
+\textbf{Solution.}
+Since trees are bipartite, let $(A,B)$ be a bipartition of $T$. Because $G$ is not bipartite, there exists an edge $(u,v)$ with both $u,v \in A$ (or both in $B$).
+
+In $T$, there is a path $u v_1 v_2 \cdots v_{k-1} v$. Since $u,v \in A$, this path has even length.
+
+Adding edge $(u,v)$ forms a cycle of odd length. This cycle uses exactly one edge not in $T$.
+
+\section*{2.}
+Let $G$ have a perfect matching $M$ and let $e$ be a bridge. Show that $e \in M$ iff both components of $G-e$ have an odd number of vertices.
+
+\textbf{Solution.}
+
+($\Rightarrow$) Suppose $e=(u,v)\in M$. Removing $e$ splits $G$ into components $H_1, H_2$.
+In each component, all vertices are matched except $u$ or $v$. Hence each component has an odd number of vertices.
+
+($\Leftarrow$) Suppose both components have odd size. If $e \notin M$, then $M$ restricts to a perfect matching in each component, implying each has even size, contradiction.
+
+\section*{3.}
+Find the probability that the number of heads in $n$ fair coin flips is even.
+
+\textbf{Claim:} The probability is $\frac{1}{2}$.
+
+\textbf{Proof by induction.}
+
+\textbf{Base case:} $n=1$. Only outcome with even heads is $T$, so probability is $\frac{1}{2}$.
+
+\textbf{Inductive step:}
+Assume true for $n=k$. Consider $n=k+1$.
+
+Partition sequences:
+\begin{itemize}
+\item Even prefix + T
+\item Odd prefix + H
+\end{itemize}
+
+Each contributes $2^{k-1}$ sequences. Total:
+\[
+\frac{2^{k-1} + 2^{k-1}}{2^{k+1}} = \frac{1}{2}.
+\]
+
+Thus, the probability is always $\frac{1}{2}$.
+
+\end{document}

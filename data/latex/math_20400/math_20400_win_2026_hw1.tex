@@ -1,0 +1,137 @@
+%This is my super simple Real Analysis Homework template
+
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[]{amsthm} %lets us use \begin{proof}
+\usepackage{amsmath}
+\usepackage[]{amssymb} %gives us the character \varnothing
+
+\title{Homework 1}
+\author{Aine Zhang}
+\date\today
+%This information doesn't actually show up on your document unless you use the maketitle command below
+
+\begin{document}
+\maketitle %This command prints the title based on information entered above
+
+%Section and subsection automatically number unless you put the asterisk next to them.
+\section*{Exercise 5.2.8, Problem 1}
+\subsection*{i} Let $ f (x) = x^3$ on $[0, 2]$. Compute $\int^2_0f$.
+\begin{proof}
+$\int^2_0 f = \frac{1}{4}x^4 \vert^{2}_{0} = 4$.
+\end{proof}
+\subsection*{ii} 
+Let
+$$
+f(x) = 
+\begin{cases}
+    \frac{1}{q} &  \text{when } x = \frac{p}{q} \text{ in lowest terms, } x \neq 0\\
+    0 & \text{otherwise}
+\end{cases}
+$$
+Show that $f$ is integrable, and compute $\int^1_0 f$.
+\begin{proof}
+Apply problem 3 to 1, we know that here, essentially we can construct a sequence of functions where
+$$
+f_n  = 
+\begin{cases}
+    \frac{1}{q} &  \text{when } x = \frac{p}{q},  q \leq n\\
+    0 & \text{otherwise}
+\end{cases}
+$$
+$\forall x \text{ and }\forall \epsilon >0, \exists N>0 \text{ such that } |f(x)-f_n(x)| < \epsilon,  \forall n >N$, so we get  
+$$ |f(x)-f_n(x)|= 
+\begin{cases}
+    \frac{1}{q} &  x = \frac{p}{q}, q > n\\
+    0 & x = \frac{p}{q}, q \leq n \\
+    0 & x \notin \mathbb{Q}
+\end{cases}$$
+This is true because we defined $f_n$ to be $\frac{1}{q} \text{ for } q>n$. This is all less than $\frac{1}{n}$, which means the function $f$ is integrable, and we know $\int^1_0f = \lim_{k \rightarrow \infty} \int^1_0 f_k =0$.
+
+\end{proof}
+
+\clearpage %Gives us a page break before the next section. Optional.
+\section*{Problem 2}
+Find another counter-example to show that even the integrability part of Theorem 5.2.10 is false without the word “uniformly”. That is, find a sequence of integrable functions $f_k : [a, b] \rightarrow \mathbb{R}$ which converge pointwise to $f : [a, b] \rightarrow \mathbb{R}$ but f is not Riemann integrable. 
+\begin{proof}
+Set up a function $f_n$ such that
+$$
+f_n \rightarrow f(x) = 
+\begin{cases}
+    1 &  x \in \mathbb{Q}\\
+    0 & \text{otherwise}
+\end{cases}
+$$
+$f_n$ is constructed as:
+$$
+f_n(x_n)= 
+\begin{cases}
+    1 &  \{ x_1, x_2...x_n\} \in \mathbb{Q}\\
+    0 & \text{otherwise}
+\end{cases}
+$$
+Since $\mathbb{Q} \cap [0, 1]$ is countably finite by Cantor's diagonal argument, we can set $\forall x, \lim_{n \rightarrow + \infty}f_n(x) = f(x)$. If $x \in \mathbb{Q}, x = x_n$, by definition $f_n(x_n) = 1$.  $\forall n \geq N$, which gives us $f_n(x_n) \text{ as } n \rightarrow \infty $ is eventually $1$, which gives $\lim_{n \rightarrow \infty} f_n(x) = 1 = f(x).$ Thus, we know $f_n$ converges to $f$ pointwise, but not uniformly. Each $f_n$ itself is Riemann integrable because the property $\mathbb{Q} \cap [0, 1]$ is countably finite means there are only finite discontinuities. 
+
+\end{proof}
+\clearpage
+\section*{Problem 3}
+Let $f : [a, b] \rightarrow \mathbb{R}$ be an integrable function. Let $\{ x_n \}^{\infty}_{n=1}=1 \subset (a, b)$ be a sequence of distinct numbers, and $c_n \in \mathbb{R}$ be a sequence of numbers with $ \lim_{n \rightarrow \infty} c_n = 0 $. Define
+$$
+g(x) = 
+\begin{cases}
+    f(x) + c_n & x = x_n \text{ for some } n\\
+    f(x) & \text{otherwise}
+\end{cases}
+$$
+Prove $g$ is integrable. (Hint: Use Theorem 5.2.10)
+\begin{proof}
+Given $g(x)$, we can construct a function where 
+$$
+f_n(x_n) = 
+\begin{cases}
+    g(x_1) = f(x) + c_1 & x = x_1 \\
+    g(x_2) = f(x) + c_2 & x = x_1 \\
+    ...\\
+    f(x) & \text{otherwise}
+\end{cases}
+$$, which is just
+$$
+f_n(x_n) = 
+\begin{cases}
+    g(x_n) = f(x) + c_n & x = x_n \text{ for some } n \\
+    f(x) & \text{otherwise}
+\end{cases}
+$$
+Then, we know $ = $
+$$
+|f(x)-f_n(x_n) | = 
+\begin{cases}
+    c_n & \text{for some } n \\
+    0 & \text{otherwise}
+\end{cases}
+$$
+Since the problem gives us $ \lim_{n \rightarrow \infty} c_n = 0 $, we know $\lim_{n \rightarrow \infty}|f(x)-f_n(x_n) | \leq \epsilon \text{ for some } \epsilon \geq 0$. This means the function $f_n = g$ converges pointwise to $f(x)$, so by theorem 5.2.10, the function is Riemann integrable.
+\end{proof}
+\clearpage
+\section*{Problem 4}
+\subsection*{i}
+Let $f : [a, b] \rightarrow \mathbb{R}$ be a bounded function and let $\mathcal{P}$ be a partition of $[a, b]$. Let $\mathcal{P}'$ be a refinement of $\mathcal{P}$. Show that $L(f, \mathcal{P}) \leq L(f, \mathcal{P}') \leq U (f, \mathcal{P}') \leq U (f, \mathcal{P})$. \\
+\begin{proof}
+    We can use induction to show the statement is true. Let us say we insert a point $b$ into the existing partition $\mathcal{P}$ so that the original partition $\mathcal{P} = \{ a_0, a_1...a_i, a_j...a_n \}$ becomes a refinement $\mathcal{P} = \{ a_0, a_1...a_i, b, a_j...a_n \}$. \\
+
+    %We want to show $L(f, \mathcal{P}) \leq L(f, \mathcal{P}') $
+    By the definition of a lower sum, we know $$L(f, \mathcal{P}) = \sum^n_{i=1}\inf_{x \in [a_{i-1}, a_i]}f(x)(a_i-a_{i-1}).$$ Let us abbreviate $\inf_{x \in [a_{i-1}, a_i]}f(x)(a_i-a_{i-1}) $ as $\inf_{x \in [a_{i-1}, a_i]}$ here. By expanding the definition of the lower sum, we know it is essentially $$ (a_1-a_0)\inf_{x \in [a_0, a_1]} + (a_2-a_1) \inf_{x \in [a_{1}, a_2]} + ... + (a_j - a_i) \inf_{x \in [a_{i}, a_j]} +...(a_n - a_{n-1})\inf_{x \in [a_{n-1}, a_n]},$$
+    and by the same definition applied to the refinement with $b$, we get  
+    $$L(f, \mathcal{P}') = \sum^n_{i=1}\inf_{x \in [a_{i-1}, a_i]}f(x)(a_i-a_{i-1}), $$ 
+    which will expand to $$ (a_1-a_0)\inf_{x \in [a_0, a_1]} + (a_2-a_1) \inf_{x \in [a_{1}, a_2]} + ... + (b - a_i) \inf_{x \in [a_i, b]}+(a_j - b) \inf_{x \in [b, a_j]} +...(a_n - a_{n-1})\inf_{x \in [a_{n-1}, a_n]}.$$ \\
+    Since $[a_i, b]$ and $[b, a_j]$ will both be smaller intervals than $[a_i, a_j]$, we can expect $\inf_{x \in [a_{i}, b]}f(x) \leq \inf_{x \in [a_{i}, a_j]}f(x) \text{  and} \inf_{x \in [b, a_j]}f(x) \leq \inf_{x \in [a_{i}, a_j]}f(x) ,$ as well as $(b - a_i) \leq (a_j-a_i)$ and $(a_j - b) \leq (a_j-a_i)$. So this gives us  $L(f, \mathcal{P}) \leq L(f, \mathcal{P}_{\text{with inserted b}}') $. By induction, any refinement can be thought of inserting multiple such $b$s into the original partition $\mathcal{P}$. So we get the general application $L(f, \mathcal{P}) \leq L(f, \mathcal{P}') $
+\end{proof}
+\subsection*{ii}
+Show that for any two partitions $\mathcal{P}$ and $\mathcal{P}'$, $L(f, \mathcal{P}) \leq U(f, \mathcal{P}')$. \\
+\begin{proof}
+    Let's construct a partition $\mathcal{P''}$ where $\mathcal{P}'' = \mathcal{P } \cup \mathcal{P'}$, then $\mathcal{P}''$ is a refinement of both $\mathcal{P}$ and $\mathcal{P}'$. By the previous question, we get $L(f, \mathcal{P}) \leq L(f, \mathcal{P}'')$, $U(f, \mathcal{P}'')\leq U (f, \mathcal{P}')$ and by definition of lower and upper sums, $L (f, \mathcal{P}'') \leq U (f, \mathcal{P}'')$. By chaining these together, we get $L(f, \mathcal{P}) \leq L(f, \mathcal{P}'') \leq U (f, \mathcal{P}'') \leq U (f, \mathcal{P}')$, so this gives us $L(f, \mathcal{P}) \leq U (f, \mathcal{P}')$ for any two partitions $\mathcal{P}$ and $\mathcal{P'}.$
+\end{proof}
+
+
+\end{document}

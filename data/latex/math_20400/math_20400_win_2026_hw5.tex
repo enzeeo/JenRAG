@@ -1,0 +1,188 @@
+%This is my super simple Real Analysis Homework template
+
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[]{amsthm} %lets us use \begin{proof}
+\usepackage{amsmath}
+\usepackage[]{amssymb} %gives us the character \varnothing
+
+\title{Homework 4}
+\author{Aine Zhang}
+\date\today
+%This information doesn't actually show up on your document unless you use the maketitle command below
+
+\begin{document}
+\maketitle %This command prints the title based on information entered above
+
+%Section and subsection automatically number unless you put the asterisk next to them.
+\section*{Exercise 4.6.9., Problem 1}
+Let $f : \mathbb{R}^n \to \mathbb{R}$ be a $C^1$ function, and let $S \subset \mathbb{R}^{n+1} $ be the graph of $f$. Fix a point $c \in \mathbb{R}^n$, and let $T$ be the tangent hyperplane to $S$ at the point $C = (c, f (c)) \in S$.
+\subsection*{i.}
+For any $v \in \mathbb{R}^n$, define $\gamma_v : \mathbb{R} \to \mathbb{R}^2$ by $\gamma_v(t) = tv + c$. Let $\phi_v : \mathbb{R} \to \mathbb{R}^{n+1}$ be defined by $\phi_v(t) = (\gamma_v(t), f (\gamma_v(t)))$. Show that $C + \phi_v'(0)$ lies in $T$.
+\begin{proof}
+Since $\gamma_v(t) = c + tv,$ we have $\gamma_v'(t) = v$. By the chain rule,
+\[
+\phi_v'(t)
+=
+\left(\gamma_v'(t), \frac{d}{dt} f(\gamma_v(t))\right)
+=
+\left(v, Df(\gamma_v(t))\,v\right).
+\]
+Evaluating at $t=0$ gives $\phi_v'(0) =(v, Df(c)\,v).$
+As for the tangent hyperplane $T$. Since $S$ is the graph of $f$, it can be written as the zero set of $g(x_1,\dots,x_n,x_{n+1}) = f(x_1,\dots,x_n) - x_{n+1}.$
+Thus, $S = \{x \in \mathbb{R}^{n+1} : g(x)=0\}.$
+The gradient of $g$ is
+$$\nabla g(x)
+=
+\left(D_1 f(x_1,\dots,x_n), \dots, D_n f(x_1,\dots,x_n), -1\right).$$
+At the point $C = (c, f(c))$, $\nabla g(C) = (\nabla f(c), -1).$
+The tangent hyperplane $T$ at $C$ consists of all vectors $w$ such that $\nabla g(C) \cdot w = 0.$ \\
+Now compute $\nabla g(C) \cdot \phi_v'(0) = (\nabla f(c), -1) \cdot (v, Df(c)v).$
+This equals $\nabla f(c)\cdot v - Df(c)v.$
+Since $Df(c)v = \nabla f(c)\cdot v$, we obtain $\nabla g(C) \cdot \phi_v'(0) = 0.$
+
+Thus $\phi_v'(0)$ is orthogonal to $\nabla g(C)$, so $\phi_v'(0) \in T$. Therefore, $C + \phi_v'(0)$ lies in the tangent hyperplane $T$.
+\end{proof}
+
+\subsection*{ii.}
+Show that every vector $X \in T$ can be written in the form $X = C + V$, where $V = \phi'(0)$ for some $v \in \mathbb{R}^n$. Hence, every vector in the tangent hyperplane may be realized as the tangent vector to a curve in $S$.
+
+\begin{proof}
+Let $X \in T$. Since $T$ is the tangent hyperplane at $C$, we may write $X = C + W$ for some vector $W$ orthogonal to $\nabla g(C)$. Thus $\nabla g(C) \cdot W = 0.$ \\ 
+Write $W = (a_1,\dots,a_n,a_{n+1}).$ Set $v := (a_1,\dots,a_n) \in \mathbb{R}^n.$
+From part (i) we know that $\phi_v'(0) = (v, Df(c)v).$ \\
+Since $W \in T$, we have$\nabla g(C) \cdot W = 0.$
+Using $\nabla g(C) = (\nabla f(c), -1)$, this gives
+\[
+(\nabla f(c), -1)\cdot (v, a_{n+1}) = 0 \Rightarrow
+\nabla f(c)\cdot v - a_{n+1} = 0 \Rightarrow a_{n+1} = \nabla f(c)\cdot v.
+\]
+
+But $Df(c)v = \nabla f(c)\cdot v$, so $W = (v, Df(c)v) = \phi_v'(0).$ Therefore$ X = C + W = C + \phi_v'(0),$ showing that every vector in $T$ can be written in this form.
+Hence, every vector in the tangent hyperplane is realized as the tangent vector at $t=0$ to the curve $\phi_v(t) = (c + tv, f(c+tv))$ in $S$.
+\end{proof}
+
+\clearpage %Gives us a page break before the next section. Optional.
+
+\section*{4.5.11., Problem 2}
+Let $p_j = (x_j , y_j ), j = 1, ..., m$, be $m$ points in $\mathbb{R}^2$ with at least two $x_j$'s. Given a line $y = mx + b$, define $E(m, b) = \Sigma_{j=1}^n(y_j - (mx_j + b))^2$. Find the values of $m$ and $b$ that minimize this sum. For
+the values of $m$ and $b$ that minimize the function $E$, the line $y = mx + b $is called the \textit{ordinary least squares approximation} to the data $p_1, . . . , p_m$.
+\begin{proof}
+Let $E(m,b)=\sum_{j=1}^n (y_j-(mx_j+b))^2$. Then 
+\[
+\nabla E(m,b)=\begin{bmatrix}
+-2\sum_{j=1}^n (y_j-(mx_j+b))x_j \\
+-2\sum_{j=1}^n (y_j-(mx_j+b))
+\end{bmatrix}.
+\]
+Setting $\nabla E=0$ gives the system 
+$\sum_{j=1}^n (y_j-(mx_j+b))x_j=0$ and $\sum_{j=1}^n (y_j-(mx_j+b))=0$. 
+
+From the first equation we obtain $\sum_{j=1}^n y_j x_j = m\sum_{j=1}^n x_j^2 + b\sum_{j=1}^n x_j$, and from the second equation we obtain $\sum_{j=1}^n y_j = m\sum_{j=1}^n x_j + nb$. This is a linear system in $m$ and $b$. Solving it yields 
+\[
+m=\frac{n\sum_{j=1}^n x_j y_j - \left(\sum_{j=1}^n x_j\right)\left(\sum_{j=1}^n y_j\right)}{n\sum_{j=1}^n x_j^2 - \left(\sum_{j=1}^n x_j\right)^2}
+\]
+and 
+\[
+b=\frac{\left(\sum_{j=1}^n x_j^2\right)\left(\sum_{j=1}^n y_j\right) - \left(\sum_{j=1}^n x_j\right)\left(\sum_{j=1}^n x_j y_j\right)}{n\sum_{j=1}^n x_j^2 - \left(\sum_{j=1}^n x_j\right)^2}.
+\]
+
+Since at least two of the $x_j$ are distinct, the denominator $n\sum_{j=1}^n x_j^2 - (\sum_{j=1}^n x_j)^2$ is nonzero, so the solution is well-defined. Moreover, $E(m,b)\to\infty$ as $\|(m,b)\|\to\infty$, because $E$ is a quadratic polynomial in $m$ and $b$ with positive definite quadratic part. Hence it suffices to examine critical points, and the above solution gives the unique global minimum. Therefore, these values of $m$ and $b$ minimize $E(m,b)$.
+\end{proof}
+
+\clearpage
+
+\section*{Exercise 4.7.17., Problem 3}
+Let $f : U \subset \mathbb{R}^2 \to \mathbb{R}$ be $C^2$. Let $p \in U$ be a critical point of $f$ and suppose that the matrix of $H_p$ has negative determinant. Show that $f$ does not have a local extremum at $p$. \\
+Hint: a 2 × 2 matrix has negative determinant if and only if two eigenvalues are of opposite signs. Study the value of $f$ in the direction of eigenvectors. 
+\begin{proof}
+Let $p \in U$ be a critical point of $f$, so $\nabla f(p)=0$. Since $f$ is $C^2$, Taylor's theorem gives the expansion
+\[
+f(p+h)=f(p)+\tfrac12 \langle H_p h, h\rangle + o(\|h\|^2)
+\]
+as $h \to 0$, where $H_p$ is the Hessian matrix of $f$ at $p$.
+
+We are given that $\det(H_p)<0$. For a $2\times 2$ symmetric matrix, this is equivalent to saying that its two eigenvalues have opposite signs by the hint. Let $\lambda_1>0$ and $\lambda_2<0$ be the eigenvalues of $H_p$, with corresponding eigenvectors $v_1$ and $v_2$.
+
+Consider $h=t v_1$. Since $v_1$ is an eigenvector, we have $H_p v_1=\lambda_1 v_1$, and hence $\langle H_p v_1, v_1\rangle=\lambda_1 \|v_1\|^2>0$. Thus
+\[
+f(p+t v_1)=f(p)+\tfrac12 t^2 \lambda_1 \|v_1\|^2 + o(t^2).
+\]
+For sufficiently small $t\neq 0$, the quadratic term dominates, and therefore $f(p+t v_1)>f(p)$.
+
+Now if we consider $h=t v_2$. Similarly, $H_p v_2=\lambda_2 v_2$, so $\langle H_p v_2, v_2\rangle=\lambda_2 \|v_2\|^2<0$. Hence
+\[
+f(p+t v_2)=f(p)+\tfrac12 t^2 \lambda_2 \|v_2\|^2 + o(t^2),
+\]
+and for sufficiently small $t\neq 0$, we have $f(p+t v_2)<f(p)$.
+
+Thus, in one direction near $p$ the function increases, and in another direction it decreases. Therefore $p$ cannot be a local maximum or a local minimum. Hence $f$ does not have a local extremum at $p$.
+\end{proof}
+\clearpage
+
+\section*{Exercise 4.7.18, Problem 4}
+ Find the critical points of $f(x, y) = x^3 + 8y^3 - 6xy - 2$. For each, determine if it is a local maximum, local minimum, or saddle point, if possible. 
+
+ \begin{proof}
+     We want to find where $\nabla f=0$, so we take the partial derivatives and get $\nabla f =\begin{bmatrix}
+         3x^2-6y & 24y^2-6x
+     \end{bmatrix}=0. $ So $ 3x^2-6y=0, 24y^2-6x=0 \Rightarrow x^2=2y, x=4y^2 \Rightarrow x^4=4y^2 \Rightarrow x^4=x \Rightarrow x(x^3-1)=0 \Rightarrow x = 0 \text{ or } x=1$. \\
+     So, $\nabla f =0 \text{ when }\begin{cases}
+         x =0, y=0 \\
+         x = 1, y = 0.5
+     \end{cases}$ \\
+     We want to apply the second derivative test to see what happens to the two points. \\
+     $$Hf(x)=\begin{bmatrix}
+         D_1^2f & D_1D_2f \\
+         D_2D_1f & D_2^2f
+     \end{bmatrix}.$$
+    We know $D_1^2f=6x, D_2D_1f=D_1D_2f=-6, D_2^2=48y$, so we get\\
+         $$Hf(x)=\begin{bmatrix}
+         6x  & -6 \\
+         -6 & 48y
+     \end{bmatrix}.$$
+    Plug in $x=1, y=0.5$ now, we get 
+        $Hf(x)=\begin{bmatrix}
+         6 & -6 \\
+         -6 & 24
+     \end{bmatrix}.$ Next we find the eigenvalues:         $$Char(\begin{bmatrix}
+         6 & -6 \\
+         -6 & 24
+     \end{bmatrix})= \det(\begin{bmatrix}
+         \lambda & 0 \\
+         0 & \lambda
+     \end{bmatrix} - \begin{bmatrix}
+         6 & -6 \\
+         -6 & 24 
+    \end{bmatrix})= \det(\begin{bmatrix}
+         \lambda - 6 & 6 \\
+         6 & \lambda -24 
+    \end{bmatrix})=\lambda^2-30\lambda +108
+         $$
+    So we get $\lambda = 15 \pm 3\sqrt{13}, \lambda_1=15 + 3\sqrt{13} \approx 25.81, \lambda_2= 15 - 3\sqrt{13} \approx 4.18$. So we get that both eigenvalues are positive, so the Hessian matrix at this point is positive definite and the point $(1,0.5)$ is a local minimum.  \\
+    Next, plug in $x=0, y=0$ first, we get 
+          $H(f)(x)=\begin{bmatrix}
+         0 & -6 \\
+         -6 & 0
+     \end{bmatrix}.$ Next we find the eigenvalues           $$Char(\begin{bmatrix}
+         0 & -6 \\
+         -6 & 0
+     \end{bmatrix})= \det(\begin{bmatrix}
+         \lambda & 0 \\
+         0 & \lambda
+     \end{bmatrix} - \begin{bmatrix}
+         0 & -6 \\
+         -6 & 0
+     \end{bmatrix}) = \det(\begin{bmatrix}
+         \lambda & 6 \\
+         6 & \lambda
+     \end{bmatrix}) =\lambda^2-36 \Rightarrow \lambda = \pm 6 $$
+     The Hessian matrix is neither positive definite nor negative definite, so we need extra methods to determine what this point is. \\
+     $f(0,0)=-2$. Consider the function along the line $y=0$. Then $f(x,0)=x^3-2$. For $x>0$ small, $f(x,0)>-2$, and for $x<0$ small, $f(x,0)<-2$. Thus, in any neighborhood of $(0,0)$, the function takes values both greater than and less than $f(0,0)$. Therefore, $(0,0)$ is a saddle point.
+
+     Hence, the critical points are $(0,0)$, which is a saddle point, and $(1,0.5)$, which is a local minimum.
+\end{proof}
+
+
+\end{document}

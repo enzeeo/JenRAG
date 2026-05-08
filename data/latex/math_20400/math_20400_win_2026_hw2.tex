@@ -1,0 +1,121 @@
+%This is my super simple Real Analysis Homework template
+
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[]{amsthm} %lets us use \begin{proof}
+\usepackage{amsmath}
+\usepackage[]{amssymb} %gives us the character \varnothing
+
+\title{Homework 2}
+\author{Aine Zhang}
+\date\today
+%This information doesn't actually show up on your document unless you use the maketitle command below
+
+\begin{document}
+\maketitle %This command prints the title based on information entered above
+
+%Section and subsection automatically number unless you put the asterisk next to them.
+\section*{Exercise 4.1.7, Problem 1}
+First read Example 4.1.6, then complete Exercise 4.1.7. (30 points) \\
+Let $r \geq 1$, and set
+$$
+f_r(x) = 
+\begin{cases}
+    \frac{1}{q^r} &  \text{if } x = \frac{p}{q} \text{ in lowest terms, } x \neq 0\\
+    0 & \text{if } x = 0 \text{ or } x \text{ is irrational}
+\end{cases}
+$$
+
+\subsection*{i} Show that for any $r \geq 1$, $f_r$ is continuous at 0 and the irrational numbers and is discontinuous at the nonzero rationals.
+
+\begin{proof}
+If let $x_0 \notin \mathbb{Q}$ and $\forall \epsilon > 0, f_r(x_0) = 0$, by the Archimedean property, $\exists N >0$ s.t. $q > N, \forall \epsilon >N, \frac{1}{q^r} < \epsilon$ i.e. consider all x s.t. $f(x) \geq \epsilon $ then $x=p/q$ and $q \leq N$ such $x$ are finite. Thus, there os a $\delta >0$ s.t. the interval $(x_0-\delta, x_0+\delta)$, where $q >N$, so $|f(x)-f(x_0)| \leq \frac{1}{q^r} \leq \frac{1}{q} < \epsilon$. Similarly, if $x_1 = 0, f(x_1)=0$. The same idea holds, where for $\epsilon >0,$ there is $\delta>0$ s.t. $(x_1 -\delta, x_1+\delta)$ contains only values $x$ s.t. $|f(x)-f(x_i)| \leq \frac{1}{q^r} \leq \frac{1}{q} \leq \epsilon$, with $q >N$ and $N \in \mathbb{N}$ s.t. $\frac{1}{N} \leq \epsilon.$ Let $x_2=\frac{p}{q} \neq 0$, $f(x_2)=\frac{1}{q^r} \neq 0.$ By density of irrationals, we can find a seq $y_n\rightarrow x_2$ where $y_n$ is not irrational, but we know $|f(x)-f(x_0)| > \epsilon$, so $f_r $ is discontinuous at the nonzero rationals.
+\end{proof}
+
+\subsection*{ii} If $1 \leq r \leq 2$, show that $f_r$ is not differentiable at any irrational point. (Hint: Use Theorem 1.3.9)
+
+\begin{proof}
+ Theorem 1.3.9: If $\alpha$ is irrational, then there are infinitely many rational numbers $p/q$ such that $|\alpha - p/q| < 1/q^2$. This gives us $\rightharpoonup \forall x \notin \mathbb{Q} \exists c>0$ a sequence $\frac{p_n}{q_n}$ s.t. $|\frac{p_n}{q_n}-x_0| < \frac{c}{q^2_n} \forall n$ and $q_n \rightarrow + \infty$. \\
+ At any irrational point, we ask whether $\lim_{x \rightarrow 0} \frac{f(x)-f(x_0)}{x-x_0}$ exists. Choose $x_n = \frac{p_n} {q_n}$. $|\frac{1/q^n}{p_n/q_n-x_0}|>\frac{1/q^r_n}{c/q^2} = \frac{1}{c}q_n^{2-r}=\frac{1}{c}$. 
+ If $r < 2$, then the sequence goes to infinity since $q_n^{2-r}$ would blow up. But we also have to consider $r=2$, $\lim \geq 1/c > 0 $ because the irrationals are dense, choose a seq $x_n \rightarrow x_0$ where $x_n \notin \mathbb{Q} \rightharpoonup \frac{f(x_n)-f(x_0)}{x_n-x_0} = 0$ limit does not exist. \\
+
+
+ 
+
+\end{proof}
+
+\subsection*{iii} For which $r$ is $f_r$ differentiable at $x=0$?
+\begin{proof}
+     $\lim_{x\rightarrow 0}\frac{f_r(x)-f_r(0)}{x} = \lim_{x\rightarrow 0} \frac{f_r(x)}{x}$ choose $x_n \rightarrow 0$, s.t. $x_n \notin \mathbb{Q}, \frac{f_n(x_n)}{x_n} = 0$, so we know $\lim_{x\rightarrow 0} \frac{f_r(x)}{x}=0$. However, when $x_n \in \mathbb{Q}$.
+     $\frac{f_r(p/q)}{p/q}=\frac{1/q^r}{p/q}=\frac{1}{q^{r-1}p}$. \\
+     If $r>1$, then $\frac{1}{q^{r-1} \cdot p} \leq \frac{1}{q^{r-1}}$ goes to 0 because if $x_n \in \mathbb{Q}, x_n \rightarrow 0$ then $q_n \rightarrow + \infty$, this means the function is differentiable since both sides of the limit match up. Here, the derivative is 0. \\
+     If $r \leq 1$, $x_n = \frac{1}{2^n}, \frac{f_r(p/q)}{p/q}= 2^{n(1-r)}$ not going to zero, so the limit cannot exist because it is different on both sides, so the function is not differentiable when $r \leq 1$. 
+\end{proof}
+
+\clearpage %Gives us a page break before the next section. Optional.
+\section*{Exercise 4.1. 19, Problem 2}
+
+(L’Hopital’s Rule) Suppose $f \text{ and } g$ are differentiable on $(a, b) $ and $c \in (a, b)$. Suppose $\lim_{x \rightarrow c} f (x) =
+\lim_{x \rightarrow c} g(x) = 0$ and $\lim_{x \rightarrow c} \frac{f'(x)}{g'(x)}$ is well-defined and exists. Show that $\lim_{x \rightarrow c} \frac{f (x)}{g(x)} = \lim_{x \rightarrow c} \frac{f'(x)}{g'(x)}$
+\begin{proof}
+Let's say there exists $c_o \in (x, c)$, then as $x \rightarrow c$, $c_0 \rightarrow c$. So this means We know $f$ and $g$ are both differentiable, which implies both of them are continuous. So, by MVT (3): we know then for $c_0 \in (x,c), \frac{f'(c_0)}{g'(c_0)} = \frac{f(x) - f(c)}{g(x) - g(c)}$. \\
+Since $f$ and $g$ are both continuous, we know that $\lim_{x \rightarrow c} f (x) = \lim_{x \rightarrow c} g(x) = 0$ gives us $f(c) = g(c) = 0$. This is because the continuous property means the value we get from x approaches (c) must be the value of the function at c itself. Bringing this back into the previous MVT conclusion gives us $ \frac{f'(c_0)}{g'(c_0)} = \frac{f(x) - f(c)}{g(x) - g(c)} = \frac{f(x) - 0}{g(x) - 0}$, we can replace $c_0$ with $x$ as $x \rightarrow c$, so we get to the conclusion $\lim_{x \rightarrow c} \frac{f (x)}{g(x)} = \lim_{x \rightarrow c} \frac{f'(x)}{g'(x)}$.
+
+
+
+
+\end{proof}
+\clearpage
+\section*{Exercise 4.1.24., Problem 3}
+Suppose $f : [a, b] \rightarrow R \text{ is } C^1$ on $(a, b)$. Let $[c, d] \subset (a, b)$. Then there exists a constant M such that for all $x, y \in [c, d]$, we have $|f (y) - f (x)| \leq M |y - x|$.
+
+\begin{proof}
+Since $f$ is $C^1$, we ccan apply the Mean Value Theorem (2), so we know that there exists $e \in (a,b) s.t.f'(e) = \frac{|f(y)-f(x)|}{|y-x|}.$ Since $f'(e)$ operates over $[c,d]$, which is compact because it is closed and bounded in $R^n$, and $f'$ exists, we know that $f'(e)$ is bounded s.t. $|f'(e)| \leq M$ for some $M> 0$. So, we know that $\frac{|f(y)-f(x)|}{|y-x|} \leq M \Rightarrow |f (y) - f (x)| \leq M |y - x|$
+\end{proof}
+\clearpage
+
+
+\section*{Exercise 4.1.26., Problem 4}
+ (20 points)
+Let
+$$
+f(x) = 
+\begin{cases}
+    e^{-1/x^2} & \text{ when } x \neq 0 \\
+    0 & \text{ when } x = 0  
+\end{cases}
+$$
+\subsection*{i}
+Show that $f \in C^\infty(\mathbb{R}).$ \\
+\begin{proof}
+ At any point where $x \neq 0$, we know $f'(x) = e^{-1/x^2} \cdot \frac{2}{x^3}$. $\lim_{x \rightarrow0} \frac{e^{-1/x^2}}{x} = \lim_{y\rightarrow +\infty}e^{-y^2}y=0$ 
+ $f''(x) = (-6x^{-4}+4x^{-6})\cdot e^{-1/x^2},   f''(0) = 0$, so its still zero. By repeated differentiation, we can show by induction that for every $k \geq 0$, $f^k(x) = p_k(\frac{1}{x})e^{-1/x^2}$ by the chain rule, where $p_k$ is some polynomial. Assume this: find $f^{(n+1)}(x)$ if $x \neq 0$, $(p_n(\frac{1}{x}) e^{-1/x^2} + p_n(1/x)e^{-1/x^2}2x^{-3} = e^{1/x^2}(p_n'(\frac{1}{x}(-\frac{1}{x^2}+p_n(\frac{1}{x})2x^{-3})$
+ Since any polynomial is infinitely differentiable, we know that this function will also be $C^\infty$. Then, at some point $x$ where $x$ is in the neighborhood of 0 or $x =0$, we know $\lim_{x \rightarrow 0}f^k(x)=0$, which gives us $f^k(0)= 0,$ which is also infinitely differentiable. \\
+
+ $$x=0, f^{n+1}(0)=\lim_{x\rightarrow0}\frac{f^n(x)-f^n(0)}{x-0}=\lim_{x\rightarrow0}\frac{p_n(\frac{1}{x})\cdot e^{-\frac{1}{x^2}}}{x}=\lim_{x\rightarrow0}\frac{p_n(y)\cdot y}{e^{y^2}}=0$$
+ 
+\end{proof}
+\subsection*{ii}
+Using L’Hopital’s rule, or anything you wish, show that $f^{(k)}(0) = 0$ for all $k \geq 0$. \\ 
+\begin{proof}
+    Since $f(0) = 0$, and $f$ is infinitely continuous and differentiable, we know that any $k \geq 0$ will exist, and it will just be a derivative of the constant 0. Since any derivative of a constant is always zero, we know  $f^{(k)}(0) = 0$. See above proof as well. 
+\end{proof}
+
+\clearpage 
+
+\section*{Exercise 4.2.8 Problem 5}
+Let $U \subset \mathbb{R}^n$ be an open set and let $f : U \rightarrow \mathbb{R}^m$ be differentiable. Write $f = (f_1, f_2, . . . , f_m)$ where $f_k : U \rightarrow \mathbb{R}$ is the $k^{th}$ coordinate function of $f$. Let $v \in \mathbb{R}^n$ be a unit vector. If $x \in U $, define
+$$D_vf (x) = \lim_{t \rightarrow 0}\frac{f(x+tv)-f(x)}{t}. $$
+Show that $D_vf (x)$ exists if and only if $D_vf_k(x)$ exists for all $k$, $1 \leq k \leq m$, and in this case, $D_vf (x) = (D_vf_1(x), D_vf_2(x), . . . , D_vf_m(x))$. \\ 
+\begin{proof}
+    We want to show: $\lim_{t \rightarrow 0}\frac{f(x+tv)-f(x)}{t} := G(t) $ exists $\iff \lim_{t \rightarrow 0}\frac{f_i(x+tv)-f_i(x)}{t} := G_i(t)$ exist $\forall i$. Here, we also set up $\lim_{t \rightarrow 0}G(t)$. Here, let's also name the vectors $G(t)=(a_1,a_2,....a_n)$. Then, $$G(t) = \frac{(f_1(x+t_1), f_2(x+t_2),...f_m(x+t_m))-(f_1(x),...,f_m(x))}{t}$$
+    $$=(\frac{f_1(x+t_1)-f_1(x)}{t},\frac{f_2(x+t_2)-f_2(x)}{t},....\frac{f_m(x+t_m)-f_m(x)}{t}).$$ 
+    $$ = (G_1(t), ...G_m(t)$$
+    Prove that $G(t) \in \mathbb{R}^m = G_1(t),...,G_m(t)$, 
+    We want to prove that $G(x)=G_i(x),$ then $\lim_{t \rightarrow 0} G_i(t)$ exists $\iff \lim_{t \rightarrow 0} G(t)$ exists. Going back to the individual vectors $a_i$, 
+    $\sqrt{a_1-G_1(t_1)^2+....+(a_n-G_n(t)^2)} \rightarrow 0 \leq  |a_i-G_i(t)| \rightharpoonup |G_i(t)\rightarrow a_i| \forall i$  then we know it goes to some $ G_i(t) \rightarrow a_i$, which means it is less than some $\forall i \sqrt{n}\cdot \epsilon$
+\end{proof}
+
+
+\end{document}

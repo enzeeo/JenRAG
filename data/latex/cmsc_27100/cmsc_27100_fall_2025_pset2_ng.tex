@@ -1,0 +1,91 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{enumitem}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.75em}
+
+\newcommand{\divides}{\mid}
+\newenvironment{solution}{\par\noindent\textbf{Solution}\quad}{\hfill$\square$\par}
+\newenvironment{notes}{\par\noindent\textbf{Notes}\quad}{\par}
+
+\begin{document}
+
+\begin{center}
+    {\Large \textbf{CMSC 27100---Problem Set 2 Solutions}}\\[0.6em]
+    {\large University of Chicago, Autumn 2025}
+\end{center}
+
+\section*{Solutions}
+
+\begin{enumerate}[label=\arabic*.]
+    \item Prove that for all integers $a,b,c$, for all integers $x$ and $y$, $a \divides b$ and $a \divides c$ if and only if $a \divides bx + cy$.
+
+    \begin{solution}
+    Let $a,b,c$ be arbitrary integers such that $a \divides b$ and $a \divides c$. Let $x$ and $y$ be arbitrary integers. Then since $a \divides b$, we have $a \divides bx$ and since $a \divides c$, we have $a \divides cy$. Then since $a \divides bx$ and $a \divides cy$, we have $a \divides bx + cy$.
+
+    Now, let $a,b,c$ be arbitrary integers such that $a \divides bx + cy$ for all integers $x$ and $y$. Choosing $x=1$ and $y=0$, we have $a \divides b\cdot 1 + c\cdot 0$ so $a \divides b$. Similarly, choosing $x=0$ and $y=1$, we have $a \divides b\cdot 0 + c\cdot 1$ and therefore $a \divides c$.
+    \end{solution}
+
+    \begin{notes}
+    This one is relatively straightforward but hits on a few ideas:
+    \begin{itemize}[topsep=0.2em]
+        \item Using the definition of divisibility and/or properties already proved about divisibility.
+        \item Proving a simple if and only if statement.
+        \item Correctly parsing and using the quantifiers.
+    \end{itemize}
+    \end{notes}
+
+    \item Suppose that $a$ and $b$ are positive integers such that when $a$ is divided by $b$, a quotient of $q$ and remainder of $r$ are obtained with $r > 0$. Determine the quotient and remainder when $-a$ is divided by $b$ and prove that your answer is correct using the statement of the Division Theorem.
+
+    \begin{solution}
+    By the Division theorem, we have $a=b\cdot q+r$ such that $0<r\leq b$. Then
+    \begin{align*}
+        -a &= -(b\cdot q+r) \\
+           &= b\cdot -q-r \\
+           &= b\cdot (-q-1)+b-r.
+    \end{align*}
+
+    We claim that when $-a$ is divided by $b$, the quotient is $-q-1$ and the remainder is $b-r$. The Division theorem says that there exist unique integers $q'$ and $r'$ such that $-a=b\cdot q' + r'$, where $0\leq r'<b$, so by setting $q'=-q-1$, it suffices to show that $r'=b-r$ by showing $0\leq b-r<b$.
+
+    Recall that we started with $0<r<b$, since $r>0$. From this we have $0>-r>-b$, which gives us $b>b-r>0$. So $b-r$ satisfies the conditions of the Division theorem.
+    \end{solution}
+
+    \begin{notes}
+    This one involves some algebraic manipulation to get a neat consequence of the Division theorem for negative numbers. Being careful, especially with the inequalities, is important.
+    \end{notes}
+
+    \item Let $a,b,c$ be non-zero integers. We will extend the idea of ``greatest common divisors'' to \emph{three} integers by defining $\gcd(a,b,c)$ to be the largest positive integer that divides $a,b,c$.
+
+    \begin{enumerate}[label=(\alph*)]
+        \item Prove that if $d=\gcd(a,b,c)$, then $d$ is a common divisor of $a$ and $\gcd(b,c)$.
+        \item Prove that if $f$ is a common divisor of $a$ and $\gcd(b,c)$, then $f$ is a common divisor of $a,b,c$.
+        \item Prove that $\gcd(a,b,c)=\gcd(a,\gcd(b,c))$.
+    \end{enumerate}
+
+    \begin{solution}
+    \begin{enumerate}[label=(\alph*)]
+        \item Suppose $d=\gcd(a,b,c)$. So $d$ is a common divisor of each of $a,b,c$. So there exist integers $x$ and $y$ such that $b=dx$ and $c=dy$. Let $e=\gcd(b,c)$. By B\'{e}zout's identity, there exist integers $m$ and $n$ such that $e=bm+cn$. Then we have
+        \begin{align*}
+            e &= bm+cn \\
+              &= (dx)m+(dy)n \\
+              &= d(xm+yn).
+        \end{align*}
+        Since $xm+yn$ is an integer, we have that $d\divides e$ and therefore $d\divides \gcd(b,c)$. So $d$ is a common divisor of $a$ and $\gcd(b,c)$.
+
+        \item Let $f$ be a common divisor of $a$ and $\gcd(b,c)$. Let $e=\gcd(b,c)$. So there exist integers $m$ and $n$ such that $b=em$ and $c=en$. Since $f\divides e$, there exists an integer $q$ such that $e=fq$. Then $b=(fq)m$ and $c=(fq)n$. Since $qm$ and $qn$ are integers, we have that $f\divides b$ and $f\divides c$. So $f$ is a common divisor of $a,b,c$.
+
+        \item Let $f=\gcd(a,b,c)$ and $g=\gcd(a,\gcd(b,c))$. From above, $f$ is a common divisor of $a$ and $\gcd(b,c)$, so $f\leq g$. Also from above, $g$ is a common divisor of $a,b,c$, so $g\leq f$. Therefore, $f=g$.
+    \end{enumerate}
+    \end{solution}
+
+    \begin{notes}
+    This one relies heavily on the definition of common divisor. It is a common error to forget about this and jump straight into using B\'{e}zout's identity whenever we deal with the greatest common divisor.
+    \end{notes}
+\end{enumerate}
+
+\end{document}

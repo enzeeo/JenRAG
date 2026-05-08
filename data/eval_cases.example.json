@@ -1,0 +1,12 @@
+[
+  {
+    "query": "Explain the proof strategy used in the retrieved course materials.",
+    "reference": "The answer should explain the strategy in plain language, cite the retrieved evidence, and acknowledge missing support when necessary.",
+    "category": "grounded_explanation"
+  },
+  {
+    "query": "Generate one new practice question that is similar in style to the retrieved assignment material.",
+    "reference": "The answer should create a new practice question grounded in the retrieved assignment or note style without claiming it was copied directly.",
+    "category": "practice_generation"
+  }
+]

@@ -1,0 +1,75 @@
+
+\documentclass[11pt]{article}
+\usepackage{amsmath, amssymb}
+\title{CMSC 27100 --- Problem Set 4 Solutions}
+\date{University of Chicago, Autumn 2025}
+\begin{document}
+\maketitle
+
+\section*{1.}
+Let $p > 2$ be a prime number and let $a, b$ be integers with $a \ne b$. Prove that
+\[
+x^2 + ab \equiv (a + b)x \pmod{p}.
+\]
+
+\textbf{Solution.}
+\[
+x^2 + ab \equiv (a + b)x \pmod{p}
+\]
+\[
+x^2 - (a + b)x + ab \equiv 0 \pmod{p}
+\]
+\[
+(x - a)(x - b) \equiv 0 \pmod{p}
+\]
+Then $p \mid (x - a)(x - b)$. Since $p$ is prime, by Euclid's lemma,
+$p \mid x - a$ or $p \mid x - b$. Hence $x \equiv a \pmod{p}$ or $x \equiv b \pmod{p}$.
+
+\section*{2.}
+Let $D_{2k}$ be the set of balanced strings of brackets of length $2k$. Show that
+\[
+2^{2k/4} \le |D_{2k}| \le \binom{2k}{k}.
+\]
+
+\textbf{Solution.}
+Define a function $h : \{0,1\}^{2k/4} \to D_{2k}$ by mapping:
+\[
+0 \mapsto [][] \quad \text{and} \quad 1 \mapsto [[]].
+\]
+This produces balanced strings of length $2k$. The mapping is injective, so
+\[
+2^{2k/4} \le |D_{2k}|.
+\]
+
+Now let $B_{2k}$ be the set of bracket strings with $k$ opening and $k$ closing brackets.
+Then
+\[
+|B_{2k}| = \binom{2k}{k}.
+\]
+Define $g : D_{2k} \to B_{2k}$ by $g(u)=u$. This is injective, so
+\[
+|D_{2k}| \le \binom{2k}{k}.
+\]
+
+\section*{3.}
+Prove that
+\[
+\binom{2n}{2} = 2\binom{n}{2} + n^2.
+\]
+
+\textbf{Solution.}
+$\binom{2n}{2}$ counts binary strings of length $2n$ with exactly two $0$'s.
+
+Split the string into two halves of length $n$:
+\begin{itemize}
+\item Both $0$'s in first half: $\binom{n}{2}$
+\item Both $0$'s in second half: $\binom{n}{2}$
+\item One in each half: $n^2$
+\end{itemize}
+
+Summing:
+\[
+\binom{2n}{2} = \binom{n}{2} + \binom{n}{2} + n^2 = 2\binom{n}{2} + n^2.
+\]
+
+\end{document}

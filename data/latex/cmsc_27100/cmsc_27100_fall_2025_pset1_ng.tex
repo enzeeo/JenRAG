@@ -1,0 +1,202 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\succop}{\operatorname{succ}}
+\newcommand{\nil}{\langle\rangle}
+\newcommand{\cons}[2]{\langle #1,#2\rangle}
+\newcommand{\insertop}{\rightsquigarrow}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  columns=fullflexible,
+  keepspaces=true,
+  frame=single,
+  showstringspaces=false
+}
+
+\title{CMSC 27100---Problem Set 1 Solutions\\
+\large University of Chicago, Autumn 2025}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section*{Solutions}
+
+\begin{enumerate}[leftmargin=*]
+
+\item Prove that for all natural numbers $m,n,p$, we have
+\[
+  m \times (n+p) = m \times n + m \times p.
+\]
+
+\textbf{Solution.} First, we define $m \times n$ for natural numbers $m$ and $n$ by
+\begin{itemize}
+  \item if $m=z$, then $m \times n = z \times n = z$, and
+  \item if $m=\succop(k)$ for some natural number $k$, then
+  $m \times n = \succop(k) \times n = n + k \times n$.
+\end{itemize}
+
+We will prove that $m \times (n+p)=m\times n+m\times p$ by induction on $m$.
+
+\textbf{Base case.} If $m=z$, then
+\begin{align*}
+  m \times (n+p) &= z \times (n+p) && \text{Premise} \\
+  &= z && \text{Multiplication} \\
+  &= z+z && \text{Addition} \\
+  &= z\times n + z && \text{Multiplication} \\
+  &= z\times n + z\times p && \text{Multiplication} \\
+  &= m\times n + m\times p && \text{Premise.}
+\end{align*}
+
+\textbf{Inductive case.} Let $m=\succop(k)$ where $k$ is an arbitrary natural number.
+Assume that
+\[
+  k \times (n+p) = k \times n + k \times p.
+\]
+Then we have
+\begin{align*}
+  m \times (n+p)
+  &= \succop(k) \times (n+p) && \text{Premise} \\
+  &= (n+p) + k \times (n+p) && \text{Multiplication} \\
+  &= (n+p) + (k\times n + k\times p) && \text{Inductive hypothesis} \\
+  &= n + (p + (k\times n + k\times p)) && \text{Associativity of addition} \\
+  &= n + ((p+k\times n)+k\times p) && \text{Associativity of addition} \\
+  &= n + ((k\times n+p)+k\times p) && \text{Commutativity of addition} \\
+  &= n + (k\times n + (p+k\times p)) && \text{Associativity of addition} \\
+  &= n + (k\times n + \succop(k)\times p) && \text{Multiplication} \\
+  &= (n+k\times n) + \succop(k)\times p && \text{Associativity of addition} \\
+  &= \succop(k)\times n + \succop(k)\times p && \text{Multiplication} \\
+  &= m\times n + m\times p && \text{Premise.}
+\end{align*}
+
+\textbf{Notes.}
+\begin{itemize}
+  \item The property that is being proved in this problem is distributivity of multiplication over addition.
+  \item Note that a slightly different definition of multiplication can be used, for instance, expanding on $n$ instead of $m$. The proof will change depending on your definition.
+  \item Notice that the use of associativity and commutativity of addition are noted explicitly. It is important in proofs of fundamental facts like this to be extra careful in applying definitions and known results to ensure that we do not take any shortcuts we are not allowed to.
+\end{itemize}
+
+\item Prove that for every propositional sentence $p$ over the propositional variables
+$x_1,x_2,\ldots$, there is a logically equivalent propositional sentence that uses only the Sheffer stroke.
+
+\textbf{Solution.} We will prove this by induction on the propositional sentence $p$.
+
+\textbf{Base case.} In this case, $p=x$, where $x$ is a propositional variable from $x_1,x_2,\ldots$.
+Since the sentence is just a propositional variable on its own, it vacuously uses only the Sheffer stroke.
+Alternatively, it does not use any connective that is not the Sheffer stroke.
+
+\textbf{Inductive case.} Let $q$ and $r$ be arbitrary propositional sentences and assume that $q$ and $r$ are written using only the Sheffer stroke connective. We have four cases.
+
+\begin{itemize}
+  \item If $p=\neg q$, then $p\equiv q\uparrow q$ by the truth table
+  \[
+  \begin{array}{c|c|c}
+  q & \neg q & q\uparrow q \\
+  \hline
+  T & F & F \\
+  F & T & T
+  \end{array}
+  \]
+
+  \item If $p=q\land r$, then $p\equiv (q\uparrow r)\uparrow(q\uparrow r)$ by the truth table
+  \[
+  \begin{array}{c|c|c|c|c}
+  q & r & q\land r & q\uparrow r & (q\uparrow r)\uparrow(q\uparrow r) \\
+  \hline
+  T & T & T & F & T \\
+  T & F & F & T & F \\
+  F & T & F & T & F \\
+  F & F & F & T & F
+  \end{array}
+  \]
+  One way to think about this is that $\neg(q\land r)\equiv q\uparrow r$. So really, we are looking for a way to negate $q\uparrow r$, which we did in the previous case.
+
+  \item If $p=q\lor r$, then $p\equiv (q\uparrow q)\uparrow(r\uparrow r)$ by the truth table
+  \[
+  \begin{array}{c|c|c|c|c|c}
+  q & r & q\lor r & q\uparrow q & r\uparrow r & (q\uparrow q)\uparrow(r\uparrow r) \\
+  \hline
+  T & T & T & F & F & T \\
+  T & F & T & F & T & T \\
+  F & T & T & T & F & T \\
+  F & F & F & T & T & F
+  \end{array}
+  \]
+  To see this, we observe that by De Morgan's laws, $p\lor q\equiv \neg(\neg p\land\neg q)$.
+  We also see that $\neg(\neg p\land\neg q)\equiv \neg p\uparrow\neg q$ and $\neg p\equiv p\uparrow p$ from above.
+
+  \item If $p=q\to r$, then $p\equiv q\uparrow(r\uparrow r)$ by the truth table
+  \[
+  \begin{array}{c|c|c|c|c}
+  q & r & q\to r & r\uparrow r & q\uparrow(r\uparrow r) \\
+  \hline
+  T & T & T & F & T \\
+  T & F & F & T & F \\
+  F & T & T & F & T \\
+  F & F & T & T & T
+  \end{array}
+  \]
+  This one takes a bit more work, since one needs to arrive at the fact that $p\to q\equiv \neg p\lor q$.
+  This can be seen easily via truth table, but takes a bit of reasoning to get to via proof. However, once you view this as a conjunction, it is straightforward to use De Morgan's laws and the previous cases to get to the result.
+\end{itemize}
+
+\textbf{Notes.} Observe that this proof really gives a recursive algorithm for rewriting an arbitrary propositional sentence using only $\uparrow$. This is a consequence of the formal inductive argument.
+
+\item Prove that for all integers $x$ and sorted lists of integers $L$, the list $x\insertop L$ is a non-empty sorted list of integers.
+
+\textbf{Solution.} We will prove this by induction on $L$. Let $x$ be an arbitrary integer.
+
+\textbf{Base case.} If $L=\nil$ is empty, then by definition of $\insertop$,
+$x\insertop L=\cons{x}{\nil}$. This is a non-empty sorted list of integers, by Definition 3.
+
+\textbf{Inductive case.} Let $L=\cons{y}{L'}$, where $y$ is an integer and $L'$ is a sorted list of integers.
+Assume that $x\insertop L'$ is a sorted list of integers. There are two cases.
+
+\begin{itemize}
+  \item If $x<y$, then $x\insertop L=\cons{x}{\cons{y}{L'}}$.
+  Since $\cons{y}{L'}$ is a nonempty sorted list of integers and $x<y$, $x\insertop L$ is a non-empty sorted list of integers by Definition 3.
+
+  \item Otherwise, if $x\ge y$, then $x\insertop L=\cons{y}{x\insertop L'}$.
+  By our inductive hypothesis, $x\insertop L'$ is a sorted list of integers. Since $\cons{y}{L'}$ is a sorted list of integers, we have that $z\ge y$ for all $z$ in $L'$.
+  And since $x\ge y$, we have that $z\ge y$ for all $z$ in $x\insertop L'$.
+  So $x\insertop L$ is a non-empty sorted list of integers.
+\end{itemize}
+
+\textbf{Notes.} The function $x\insertop L$ is the insertion function used in insertion sort. We can translate this to Python:
+
+\begin{lstlisting}[language=Python]
+def insert(x: int, lst: list[int]) -> list[int]:
+    match lst:
+        case []:
+            return [x]
+        case y, *rest:
+            if x < y:
+                return [x] + lst
+            else:
+                return [y] + insert(x, rest)
+\end{lstlisting}
+
+Then we can also write insertion sort recursively and use \texttt{insert} from above:
+
+\begin{lstlisting}[language=Python]
+def insertion_sort(lst: list[int]) -> list[int]:
+    match lst:
+        case []:
+            return []
+        case first, *rest:
+            return insert(first, insertion_sort(rest))
+\end{lstlisting}
+
+\end{enumerate}
+
+\end{document}

@@ -1,0 +1,271 @@
+%This is my super simple Real Analysis Homework template
+
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[]{amsthm} %lets us use \begin{proof}
+\usepackage{amsmath}
+\usepackage[]{amssymb} %gives us the character \varnothing
+
+\title{Homework 4}
+\author{Aine Zhang}
+\date\today
+%This information doesn't actually show up on your document unless you use the maketitle command below
+
+\begin{document}
+\maketitle %This command prints the title based on information entered above
+
+%Section and subsection automatically number unless you put the asterisk next to them.
+\section*{Exercise 4.5.2., Problem 1}
+Let 
+$$f (x, y) =
+\begin{cases}
+    0 & \text{when } (x,y)=(0,0)\\
+    \frac{x^3y-xy^3}{x^2+y^2} & \text{otherwise}
+\end{cases}$$ 
+Show that $f$ is differentiable everywhere. Show that $D_{12}f (0, 0)$ and $D_{21}f (0, 0)$ exist, but $D_{12}f (0, 0) \neq
+D_{21}f (0, 0).$
+
+\begin{proof}
+WTS differentiability at $(0,0)$. We compute the first partial derivatives at $(0,0)$:
+$$D_1f(0,0)=\lim_{t \to 0}\frac{f(t,0)-f(0,0)}{t}
+=\lim_{t \to 0}\frac{0-0}{t}=0,$$
+since $f(t,0)=0$ for all $t$.
+
+Similarly, $D_2f(0,0)=\lim_{t \to 0}\frac{f(0,t)-f(0,0)}{t}
+=\lim_{t \to 0}\frac{0-0}{t}=0.$ Thus, $\nabla f(0,0)=(0,0)$.
+
+To show differentiability at $(0,0)$, we verify that
+$$\lim_{(x,y)\to(0,0)}\frac{f(x,y)}{\sqrt{x^2+y^2}}=0.$$
+
+For $(x,y)\neq (0,0)$,$f(x,y)=\frac{x^3y-xy^3}{x^2+y^2}
+=\frac{xy(x^2-y^2)}{x^2+y^2}.$
+
+Let $r=\sqrt{x^2+y^2}$. Then
+$$|xy|\le \frac{x^2+y^2}{2}=\frac{r^2}{2} \text{ and }
+|x^2-y^2|\le x^2+y^2=r^2. \Rightarrow$$
+$$|f(x,y)|
+=\left|\frac{xy(x^2-y^2)}{x^2+y^2}\right|
+\le \frac{\frac{r^2}{2}\cdot r^2}{r^2}
+=\frac{r^2}{2}. \Rightarrow \frac{|f(x,y)|}{r}\le \frac{r^2/2}{r}=\frac{r}{2}\to 0.$$
+
+Thus $f$ is differentiable at $(0,0)$, and differentiable everywhere. \\
+
+Now compute the mixed partial derivatives at $(0,0)$.
+
+First we can compute $D_2f(x,0)$ for $x\neq 0$:
+$$f(x,y)=\frac{x^3y-xy^3}{x^2+y^2}.$$
+
+For fixed $x\neq 0$,
+$$D_2f(x,0)
+=\lim_{t\to 0}\frac{f(x,t)-f(x,0)}{t}
+=\lim_{t\to 0}\frac{\frac{x^3t-xt^3}{x^2+t^2}}{t}
+=\lim_{t\to 0}\frac{x^3-xt^2}{x^2+t^2}
+=\frac{x^3}{x^2}=x, \text{ also, } D_2f(0,0)=0$$
+So we get
+$$D_{12}f(0,0)
+=\lim_{t \to 0}\frac{D_2f(t,0)-D_2f(0,0)}{t}
+=\lim_{t \to 0}\frac{t-0}{t}
+=\lim_{t \to 0}1
+=1.$$
+
+Now compute $D_1f(0,y)$ for $y\neq 0$:$D_1f(0,y)
+=\lim_{t\to 0}\frac{f(t,y)-f(0,y)}{t}
+=\lim_{t\to 0}\frac{\frac{t^3y-ty^3}{t^2+y^2}}{t}
+=\lim_{t\to 0}\frac{t^2y-y^3}{t^2+y^2}
+=\frac{-y^3}{y^2}
+=-y.$ Here, $D_1f(0,0)=0$.
+
+So we get$D_{21}f(0,0)
+=\lim_{t \to 0}\frac{D_1f(0,t)-D_1f(0,0)}{t}
+=\lim_{t \to 0}\frac{-t-0}{t}
+=\lim_{t \to 0}-1
+=-1.$
+This shows that $D_{12}f(0,0)=1 \text{ and } D_{21}f(0,0)=-1,$ so $D_{12}f(0,0)\neq D_{21}f(0,0).$
+
+\end{proof}
+
+\clearpage %Gives us a page break before the next section. Optional.
+
+\section*{4.5.11., Problem 2}
+Let $U$ be a convex open set in $\mathbb{R}^n$, let $x \in U$ , and let $f : U \rightarrow \mathbb{R}$ be a $C^{k+1}$ function. Show that the Taylor polynomial of $f$ at $x$ is the best polynomial approximation to $f$ at $x$ by proving that if $P$ is
+a polynomial of degree $k$ such that
+$$\lim_{t \rightarrow 0} |\frac{f(x+th)-P(t)}{t^k}| = 0,$$
+then $P$ is the Taylor polynomial of degree $k$ of $f$ at $x$ in the direction $h$.
+\begin{proof}
+    If there exists Q of degree k such that
+    $\lim_{t \rightarrow 0} |\frac{f(x+th)-Q(t)}{t^k}| = 0,$ then $\lim_{t \rightarrow 0} |\frac{P(t)-Q(t)}{t^k}| = 0,$ We know this is some form of $\frac{\deg \leq k \text{ polynomial}}{t}$ and $\Sigma_{i=0}^ka_i \cdot t^{-i} \not\to 0$; This is because unless all $a_i$'s are zero, or there's case $a_1=a_2=...=a_k=0$ but $a_0 \neq 0$ so $\not \to 0????$ In this way, $P(t)=Q(t)$ we showed $P(t)$ is the unique (best) polynomial approximation to f.  
+\end{proof}
+
+\begin{proof}
+    Since $f$ is $C^{k+1}$, the Taylor theorem in one variable applied to the function
+    $$\varphi(t)=f(x+th)$$
+    gives
+    $$\varphi(t)=T_k(t)+R_k(t),$$
+    where $T_k(t)$ is the Taylor polynomial of degree $k$ at $t=0$ and
+    $$\lim_{t\to 0}\frac{R_k(t)}{t^k}=0.$$
+    So $\lim_{t\to 0}\left|\frac{f(x+th)-T_k(t)}{t^k}\right|=0.$ Now suppose there exists a polynomial $P$ of degree $\le k$ such that
+    $\lim_{t \rightarrow 0} |\frac{f(x+th)-P(t)}{t^k}| = 0.$     Subtracting the two expressions, we get
+    $\lim_{t\to 0}|\frac{T_k(t)-P(t)}{t^k}|=0.$ \\
+    Let $Q(t)=T_k(t)-P(t).$
+    Then $Q$ is a polynomial of degree at most $k$. Write
+    $Q(t)=a_0+a_1t+\cdots+a_kt^k,$ and if we divide that by $t^k,$ we know 
+    $$\frac{Q(t)}{t^k}=a_0 t^{-k}+a_1 t^{-(k-1)}+\cdots+a_{k-1}t^{-1}+a_k.$$
+
+    If any coefficient $a_i$ with $i<k$ were nonzero, then the term $a_i t^{i-k}$ would blow up as $t\to 0$, and the limit would not be $0$.  
+    If $a_k \neq 0$, then the limit would equal $|a_k| \neq 0$.
+
+    Therefore, in order for
+    $$\lim_{t\to 0}\left|\frac{Q(t)}{t^k}\right|=0,$$
+    all coefficients $a_0,\dots,a_k$ must be zero. Hence $Q(t)\equiv 0$. So $P(t)=T_k(t).$
+
+    Therefore, the Taylor polynomial of degree $k$ is the unique polynomial of degree $k$ satisfying the given limit condition, and hence it is the best polynomial approximation to $f$ at $x$ in the direction $h$.
+\end{proof}
+\clearpage
+
+\section*{Exercise 4.6.2, Problem 3}
+\subsection*{i}
+Given the function $F(x, y) = x^2 + y^2$, consider the curve $F (x, y) = 3$, that is, $x^2 + y^2 = 3$. Find the equation of the tangent line at each point of this curve.
+\begin{proof}
+    For a small enough increment of the curve that can be denoted $((x,y)-(\text{base point})),$ the tangent line will be perpendicular to the gradient at this point, so we know $\nabla f(x_0)\cdot ((x,y)-(\text{base point})) = 0$. Let this base point be some $(x_0,y_0)$. $\nabla f(x)= \begin{bmatrix}
+        D_1f \\ 
+        D_2f
+    \end{bmatrix}(x_0,y_0)= \begin{bmatrix}
+        2x_0 \\
+        2y_0
+    \end{bmatrix}$. Plugging this back into the original equation, we get 
+    $$\begin{bmatrix}
+        2x_0 \\ 2y_0
+    \end{bmatrix} \cdot \begin{bmatrix}
+        x-x_0 \\ y-y_0 
+    \end{bmatrix} = 0$$. This gives us $2x_0(x-x_0)+2y_0(y-y_0)=0 \Rightarrow 2x_0x-2x_0^2+2y_0y-2y_0^2=0$. $x_0x+y_0y=x_0^2+y_0^2=3, $ so we would get the equation $x_0x+y_0y=3$.
+\end{proof}
+\subsection*{ii}
+Given the function
+$$F (x, y) =
+\begin{cases}
+    x^2 \sin^2(1/y) & \text{if } y \neq 0 \\
+    0  & \text{if } y = 0,
+\end{cases}
+$$
+consider the curve $F (x, y) = 1$. On what domain is $F$ a $C^1$ function? At what points is the gradient vector nonzero? Find an equation for the tangent line at all points where the gradient vector is nonzero.
+\begin{proof}
+    We consider the level curve $F(x,y)-1=0.$ Next we want to find the domain where $F$ is $C^1$.\\
+    For $y \neq 0$, the function is given by $(x,y)=x^2\sin^2(1/y)$, which is a composition and product of $C^\infty$ functions. Hence $F$ is $C^1$ (in fact $C^\infty$) on the domain $\{(x,y)\in\mathbb{R}^2 : y\neq 0\}.$\\
+    At $y=0$, although $F(x,0)=0$, the term $\sin(1/y)$ isn't stable as $y\to 0$, so the partial derivative with respect to $y$ does not exist at $y=0$. Therefore $F$ is not $C^1$ at any point with $y=0$.
+
+    Thus, $F$ is $C^1$ precisely on the set $\{(x,y): y\neq 0\}$. \\
+    Finding the Gradient vector:\\
+    For $y\neq 0$, we compute
+    $$\nabla F(x,y)
+    =
+    \begin{bmatrix}
+    D_1F & D_2F
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+    2x\sin^2(1/y) &
+    x^2 \cdot 2\sin(1/y)\cos(1/y)\cdot \left(-\frac{1}{y^2}\right)
+    \end{bmatrix}.
+    $$
+    This means $2x\sin^2(1/y) \neq 0 \Rightarrow x\neq 0$ and $x^2\cdot  2\sin(1/y)\cdot \cos(1/y)\cdot -\frac{1}{y^2}\neq0 \Rightarrow y\neq \frac{1}{k\pi}, k\in 
+    \mathbb{Z}.$ So, when $x \neq 0, y \neq \frac{1}{k\pi}, k\in \mathbb{Z},$ the gradient is nonzero. \\
+    Therefore, on the level curve $F=1$, the gradient vector is nonzero at every point (with necessarily $y\neq 0$).  \\
+    Equation of the tangent line:
+    At a point $(x_0,y_0)$ on the curve with $y_0\neq 0$, the tangent line to the level curve is perpendicular to the gradient vector. Hence it satisfies
+    \[
+    \nabla F(x_0,y_0)\cdot 
+    \begin{bmatrix}
+        x-x_0 \\ 
+        y-y_0
+    \end{bmatrix}
+    =0.
+    \]
+    Substituting the gradient, we get $$2x\sin^2(1/y)\cdot (x-x_0)+ x^2\cdot  2\sin(1/y)\cdot \cos(1/y)\cdot -\frac{1}{y^2}(y-y_0)=0$$
+    This is the equation of the tangent line at any point $(x_0,y_0)$ on the curve $F(x,y)=1$.
+\end{proof}
+
+\clearpage
+
+\section*{Exercise 4.6.6, Problem 4}
+Let $F : \mathbb{R}^3 \rightarrow \mathbb{R}^3$ be given by
+$$F (x, y, z) =
+\begin{cases}
+    \frac{1}{x}+\frac{1}{y}+\frac{1}{z} & \text{if } x \neq 0, y \neq 0, z \neq 0 \\
+    0 & \text{otherwise.}
+\end{cases}
+$$
+\subsection*{i}
+For what values of $k$ does the equation $F (x, y, z) = k$ define a smooth hypersurface?
+\begin{proof}
+    Consider the level set $F(x,y,z)-k=0.$ A set defines a smooth hypersurface if $\nabla F(x_0,y_0,z_0) \neq 0 \quad \forall (x_0,y_0,z_0) \text{ on the set.}$
+    In order to determine where $F$ is $C^1$. For $x\neq 0$, $y\neq 0$, $z\neq 0$, the function $F(x,y,z)=\frac{1}{x}+\frac{1}{y}+\frac{1}{z}$ is a sum of $C^\infty$ functions, so it is $C^1$ on the domain
+    $$\{(x,y,z)\in \mathbb{R}^3 : x\neq 0, y\neq 0, z\neq 0\}.$$
+    
+    If any of $x,y,z$ equals $0$, then $F=0$ by definition, but the function is not continuous there (since $\frac{1}{x}$, etc., blows up). Hence $F$ is not $C^1$ at any point where one of the coordinates is $0$.
+
+    Now compute the gradient on the domain where $F$ is defined:
+    $$\nabla F(x,y,z)=
+    \begin{bmatrix}
+        -\frac{1}{x^2} \\
+        -\frac{1}{y^2} \\
+        -\frac{1}{z^2}
+    \end{bmatrix}.
+    $$
+
+    On the domain $x,y,z\neq 0$, each component is strictly negative and therefore never zero. Hence
+    $$\nabla F(x,y,z)\neq 0 \quad \text{whenever } x,y,z\neq 0.$$
+
+    Now consider the level set $F(x,y,z)=k$.
+
+    If $k\neq 0$, then the equation
+    $$\frac{1}{x}+\frac{1}{y}+\frac{1}{z}=k$$
+    cannot be satisfied at any point where one of $x,y,z$ is $0$. Therefore the entire level set lies inside the domain where $F$ is $C^1$, and the gradient is nonzero everywhere on the set.
+
+    If $k=0$, then the level set includes all points where at least one coordinate is $0$, since $F=0$ there by definition. At these points $F$ is not $C^1$, so the set does not define a smooth hypersurface. Therefore, the equation $F(x,y,z)=k$ defines a smooth hypersurface precisely for $k\neq 0.$
+\end{proof}
+
+\subsection*{ii}
+For those values of $k$, find the equation of the tangent hyperplane at every point of the hypersurface.
+
+\begin{proof}
+    Let $(x_0,y_0,z_0)$ be a point on the hypersurface with $x_0,y_0,z_0\neq 0$ and
+    $$\frac{1}{x_0}+\frac{1}{y_0}+\frac{1}{z_0}=k.$$
+
+    The tangent hyperplane to a level set is perpendicular to the gradient, so it satisfies
+    $$\nabla F(x_0,y_0,z_0)\cdot 
+    \begin{bmatrix}
+        x-x_0 \\
+        y-y_0 \\
+        z-z_0
+    \end{bmatrix}
+    =0.$$
+
+    Substituting the gradient, we get
+    $$
+    \begin{bmatrix}
+        -\frac{1}{x_0^2} \\
+        -\frac{1}{y_0^2} \\
+        -\frac{1}{z_0^2}
+    \end{bmatrix}
+    \cdot
+    \begin{bmatrix}
+        x-x_0 \\
+        y-y_0 \\
+        z-z_0
+    \end{bmatrix}
+    =0.
+    $$
+
+    Expanding this gives
+    $$
+    -\frac{x-x_0}{x_0^2}
+    -\frac{y-y_0}{y_0^2}
+    -\frac{z-z_0}{z_0^2}
+    =0.
+    $$
+
+    This is the equation of the tangent hyperplane at any point $(x_0,y_0,z_0)$ on the hypersurface when $k\neq 0$.
+\end{proof}
+
+\end{document}

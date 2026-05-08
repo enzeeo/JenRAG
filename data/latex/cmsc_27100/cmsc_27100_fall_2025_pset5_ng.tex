@@ -1,0 +1,71 @@
+
+\documentclass[11pt]{article}
+\usepackage{amsmath, amssymb}
+\title{CMSC 27100 --- Problem Set 5 Solutions}
+\date{University of Chicago, Autumn 2025}
+\begin{document}
+\maketitle
+
+\section*{1.}
+Let $G_{n,k}$ be defined on binary strings of length $n$ with exactly $k$ ones.
+
+\textbf{(a)} Number of vertices:
+\[
+|V| = \binom{n}{k}.
+\]
+
+\textbf{(b)} Number of edges:
+
+Edges correspond to swapping a substring $01$ with $10$.
+There are $n-1$ positions for $01$, and remaining positions contribute
+\[
+\binom{n-2}{k-1}.
+\]
+Thus total edges:
+\[
+(n-1)\binom{n-2}{k-1}.
+\]
+
+\textbf{(c)} Bipartite:
+
+Partition vertices by parity of the sum of positions of 1's.
+Each edge flips parity, so the graph is bipartite.
+
+\section*{2.}
+Let $G=(V,E)$ be triangle-free. Show that if $(u,v)\in E$, then
+\[
+\deg(u) + \deg(v) \le n.
+\]
+
+\textbf{Solution.}
+Let $M$ be neighbors of $u$ excluding $v$, and $N$ neighbors of $v$ excluding $u$.
+If $M \cap N \neq \emptyset$, a triangle exists. So $M \cap N = \emptyset$.
+
+\[
+\deg(u) + \deg(v) = |M| + 1 + |N| + 1 = |M \cup N| + 2 \le (n-2)+2 = n.
+\]
+
+\section*{3.}
+Let $d_G(u,v)$ be the shortest path distance.
+
+\textbf{Reflexivity:}
+\[
+d_G(u,u)=0.
+\]
+If $d_G(u,v)=0$, then $u=v$.
+
+\textbf{Symmetry:}
+Paths can be reversed, so
+\[
+d_G(u,v)=d_G(v,u).
+\]
+
+\textbf{Triangle inequality:}
+If $d_G(u,w)=k$ and $d_G(w,v)=\ell$, concatenating paths gives
+\[
+d_G(u,v) \le k+\ell = d_G(u,w)+d_G(w,v).
+\]
+
+Thus $d_G$ is a metric.
+
+\end{document}

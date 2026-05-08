@@ -1,0 +1,281 @@
+%This is my super simple Real Analysis Homework template
+
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[]{amsthm} %lets us use \begin{proof}
+\usepackage{amsmath}
+\usepackage[]{amssymb} %gives us the character \varnothing
+
+\title{Homework 3}
+\author{Aine Zhang}
+\date\today
+%This information doesn't actually show up on your document unless you use the maketitle command below
+
+\begin{document}
+\maketitle %This command prints the title based on information entered above
+
+%Section and subsection automatically number unless you put the asterisk next to them.
+\section*{Exercise 4.3.6 ii, Problem 1}
+Show that the maximum value of the directional derivative of $f$ at a point $x$ is in the direction of $\nabla f(x)$, and the value of this directional derivative is $|\nabla f(x)|.$
+\begin{proof}
+    The directional derivative of $f$ at $x$ in direction $v$ is $D_vf(x)=\nabla f(x) \cdot v$. Since v is a unit vector, we know $|\nabla f(x) \cdot u |\leq \nabla |f(x)|$. If we want to maximize the directional derivative, we know by the formula of the dot product that the maximum occurs when $v$ is in the same direction as the gradient. So $v_{max}=\frac{\nabla f(x)}{|\nabla f(x)|}$. Then $D_{v_{max}}f(x)=\nabla f(x) \cdot \frac{\nabla f(x)}{|\nabla f(x)|}=|\nabla f(x)|.$ So we know the directional derivative is maximized when the direction is in $\nabla f(x)$ and the value is $|\nabla f(x)|.$
+\end{proof}
+
+
+\clearpage %Gives us a page break before the next section. Optional.
+\section*{Exercise 4.3.8, ii}
+Let \\ 
+$$
+f(x, y) =
+\begin{cases}
+    0 & \text{when } (x,y) =(0,0) \\
+    (x^2+y^2) \sin{(\frac{1}{\sqrt{x^2+y^2}})} & \text{otherwise.}
+\end{cases}
+$$
+Show that $D_1f$ and $D_2f$ exist at the origin but are not continuous. 
+\begin{proof}
+The partial derivatives at $(0,0)$ using the definition is $$
+D_1f(0,0)=\lim_{h\to0}\frac{f(h,0)-f(0,0)}{h}
+=\lim_{h\to0}\frac{h^2\sin(\frac{1}{|h|})}{h}
+=\lim_{h\to0}h\sin(\frac{1}{|h|})=0,$$
+because $|h\sin(\frac{1}{|h|})|\le |h|$ and $|h|\to0$. Similarly,
+$D_2f(0,0)=\lim_{h\to0}\frac{f(0,h)-f(0,0)}{h}
+=\lim_{h\to0}h\sin(\frac{1}{|h|})=0.$ Now  we know if $(x,y)\neq(0,0)$, so that $f(x,y)=(x^2+y^2)\sin(\frac{1}{\sqrt{x^2+y^2}})$. By the chain rule, 
+\begin{multline}
+    \frac{\partial f}{\partial x}(x,y)=2x\sin(\frac{1}{\sqrt{x^2+y^2}})-\frac{x}{\sqrt{x^2+y^2}}\cos(\frac{1}{\sqrt{x^2+y^2}}) \\
+    \frac{\partial f}{\partial y}(x,y)=2y\sin(\frac{1}{\sqrt{x^2+y^2}})-\frac{y}{\sqrt{x^2+y^2}}\cos(\frac{1}{\sqrt{x^2+y^2}}).
+\end{multline}
+Consider $\frac{\partial f}{\partial x}(x,0)$ with $x\ne0$, where $\sqrt{x^2+y^2}=|x|$. Then
+$$
+\frac{\partial f}{\partial x}(x,0)=2x\sin(\frac{1}{x})-\frac{x}{|x|}\cos(\frac{1}{x}).
+$$
+As $x\to0$, the first term goes to $0$, but the second term doesn't converge to a specific value, so $\frac{\partial f}{\partial x}(x,0)$ does not converge to 0. So $D_1f$ is not continuous at $(0,0)$. Similarly for $x=0$, it shows that $\frac{\partial f}{\partial y}(0,y)$ does not tend to 0, so $D_2f$ is also not continuous at $(0,0)$. So, the derivatives exist but aren't continuous. 
+\end{proof}
+
+\clearpage
+
+\section*{Exercise 4.3.10., Problem 3}
+For any function $f: \mathbb{C} \rightarrow \mathbb{C},$ we can write $f$ in terms of its real and imaginary parts as $f(z)=u(x,y)+iv(x,y)$, where $u$ and $v$ are functions from $\mathbb{R}^2$ to $\mathbb{R},$ and $z$ is written in the form $z = x+iy.$ A function $f: \mathbb{C} \rightarrow \mathbb{C}$ (with the usual metric on $\mathbb{C}$ is \textit{complex differentiable} at $z_0 \in \mathbb{C}$ if \\
+$$ f'(z_0)=\lim_{z \rightarrow z_0}\frac{f(z)-f(z_0)}{(z-z_0)}$$
+exists. A function $f$ is \textit{analytic} on an open set $U 
+\subset \mathbb{C}$ if $f$ is differentiable at each point of $U$. 
+
+\subsection*{i.}
+Suppose $f$ is analytic on an open set $U \subset \mathbb{C}$. Show that $u$ and $v$ are differentiable on $U$ considered as a subset of $\mathbb{R}^2$.
+\begin{proof}
+    Since C to C is  similar to $\mathbb{R}^2 \rightarrow \mathbb{R}^2$, we can write $z = x+yi, z_0=x_0+y_0i$.
+    $$ f'(z_0)=\lim_{z \rightarrow z_0}\frac{f(z)-f(z_0)}{(z-z_0)}=\lim_{(x,y)\rightarrow (x_0, y_0)} \frac{u(x,y)+iv(x, y)-(u(x_0,y_0)+iv(x_0, y_0))}{(x-x_0)+(y-y_0)i} \\$$
+    Multiply both the numerator and the denominator with the conjugate of the denominator, which is $(x-x_0)-(y-y_0)i$, and we can rewrite the numerator as $N = ((u(x,y)-u(x_0,y_0))+((v(x,y)-v(x_0,y_0))i)) \cdot((x-x_0)-(y-y_0)i)$
+    $$f'(z_0)= \lim_{(x,y)\rightarrow (x_0, y_0)} \frac{N}{(x-x_0)^2+(y-y_0)^2}.$$
+    Here, if we look at N, we know it expands like
+     \begin{multline}
+         N = ((u(x,y)-u(x_0,y_0))+((v(x,y)-v(x_0,y_0))i) \cdot((x-x_0)-(y-y_0)i) \\
+         = (u(x,y)-u(x_0,y_0))(x-x_0)+( v(x,y)-v(x_0,y_0))(y-y_0)+ \\
+            ((-u(x,y)+u(x_0,y_0))(y-y_0)+(v(x,y)-v(x_0,y_0))(x-x_0))i \\
+         = \Delta u (x-x_0) +\Delta v (y-y_0)+(-\Delta u (y-y_0)+\Delta v (x-x_0) 
+     \end{multline}
+     In the last line, we denote $\Delta u =(u(x,y)-u(x_0,y_0)) \text{ and } \Delta v = (v(x,y)-v(x_0,y_0)),$ then we can rewrite the original limit into two parts, where
+     \begin{equation}
+     \label{(1)}
+     \begin{cases}
+          \lim_{(x,y)\rightarrow (x_0, y_0)} \frac{\Delta u (x-x_0)+\Delta v (y - y_0)}{(x-x_0)^2+(y-y_0)^2} := A \\
+         \lim_{(x,y)\rightarrow (x_0, y_0)} \frac{-\Delta u (y-y_0)+\Delta v (x - x_0)}{(x-x_0)^2+(y-y_0)^2} := B
+     \end{cases}
+     \end{equation}
+     In this way, we rewrite $\lim_{(x,y)\rightarrow (x_0, y_0)} \frac{N}{(x-x_0)^2+(y-y_0)^2} = A+Bi$. By the property of $f$ being analytic, we know A and B both exist. \\
+     In order to show $u$ and $v$ differentiable at $(x_0,y_0)$ with $D_u(x_0,y_0)=[A,-B], $ we need $\frac{|\Delta u - \begin{bmatrix}
+         A  & -B
+     \end{bmatrix}\cdot \begin{bmatrix}
+                  x-x_0\\
+                  y-y_0
+                \end{bmatrix}|}{\sqrt{(x-x_0)^2+(y-y_0)^2}} \rightarrow0.$ \\
+    If we replace A from before into this function, we get $$A\cdot (x-x_0) = \frac{\Delta u (x-x_0)+\Delta v(y-y_0)}{||(x,y)-(x_0,y_0)||^2}(x-x_0).$$ Similarly, if we replace B we get $$\frac{\Delta u (y-y_0)+\Delta v(x-x_0)}{||(x,y)-(x_0,y_0)||^2}(y-y_0).$$
+    Putting both of these back into the function, we get 
+    \begin{multline}
+        \Delta u (x,y)- \frac{\Delta u (x-x_0)+\Delta v(y-y_0)}{||(x,y)-(x_0,y_0)||^2}(x-x_0)+\frac{\Delta u (y-y_0)+\Delta v(x-x_0)}{||(x,y)-(x_0,y_0)||^2}(y-y_0) \\
+        -(x-x_0)(A-\frac{\Delta u (x-x_0)+\Delta v(y-y_0)}{||(x,y)-(x_0,y_0)||^2})+(y-y_0)(B-\frac{\Delta u (y-y_0)+\Delta v(x-x_0)}{||(x,y)-(x_0,y_0)||^2})\\
+        = \Delta u (x,y) - \frac{\Delta u (x-x_0)^2+\Delta v (x-x_0)(y-y_0)}{(x-x_0)^2+(y-y_0)^2}+ \frac{-\Delta u (y-y_0)^2+\Delta v (x-x_0)(y-y_0)}{(x-x_0)^2+(y-y_0)^2} \\
+        = \Delta u - \Delta u = 0  \\
+    \end{multline}
+    By the triangle inequality we know (4) $\leq \frac{(x-x_0)(A-*)}{}$
+    If we take the limit of this function as $(x,y) \rightarrow (x_0,y_0), $ we get $\frac{\epsilon(x-x_0)+\epsilon(y-y_0)}{\sqrt{(x-x_0)^2+(y-y_0)^2}}<2 \epsilon,$ which proves the statement we wanted to show that goes to zero. The same applies to $v$ showing $v$ is also differentiable. \\  
+    
+    
+\end{proof}
+
+\subsection*{ii.}
+Suppose $f$ is analytic on an open set $U \subset \mathbb{C.}$ Show that $\frac{\partial u}{\partial x} =\frac{\partial v}{\partial y}$ and $\frac{\partial u}{\partial y} =-\frac{\partial v}{\partial x}$. These are called the \textit{Caucy-Riemann equations}. 
+\begin{proof}
+    By \ref{(1)} from the question before, we know that if we fix $y=y_0$, then $ A= \lim_{(x,y)\rightarrow (x_0, y_0)} \frac{\Delta u(x-x_0)}{(x-x_0)^2}=\frac{\Delta u}{(x-x_0)}$. Since $\Delta u = u(x,y)-u(x_0,y_0)$, so we get $A = \frac{u(x,y_0)-u(x_0,y_0)}{(x-x_0)} \Rightarrow A=\frac{\partial u}{\partial x}$. Similarly, if we fix $x =x_0, A = \lim_{(x,y)\rightarrow (x_0, y_0)} \frac{\Delta v(y-y_0)}{(y-y_0)^2}=\frac{\Delta v}{(y-y_0)} = \frac{\partial v}{\partial y}$. Because the limit exists, we know the partial derivatives both exist. so we get $\frac{\partial u}{\partial x} =\frac{\partial v}{\partial y}$. \\
+    Similarly, if we fix $y=y_0$, then $ B= \lim_{(x,y)\rightarrow (x_0, y_0)} \frac{\Delta v(x-x_0)}{(x-x_0)^2}=\frac{\Delta v}{(x-x_0)}$. Since $\Delta v = v(x,y)-v(x_0,y_0)$, so $B=\frac{\partial v}{\partial x}$. Similar to before, if we then fix $x =x_0, B = \lim_{(x,y)\rightarrow (x_0, y_0)} \frac{-\Delta u(y-y_0)}{(y-y_0)^2}=\frac{-\Delta u}{(y-y_0)} = \frac{-\partial u}{\partial y}$. Because the limit exists, we know the partial derivatives both exist, so we get $\frac{\partial v}{\partial x} =\frac{-\partial u}{\partial y} \Rightarrow -\frac{\partial u}{\partial y} = \frac{\partial v}{\partial x}$. \\
+\end{proof}
+
+\subsection*{iii.}
+If $U \subset \mathbb{C}$ is an open set, and $u$ and $v$ are continuously differentiable on $U$ and satisfy the Cauchy-Riemann equations, show that $f(z) =u(x,y) + iv(x,y)$ is analytic on $U$.
+
+\begin{proof}
+Assume that $u$ and $v$ are continuously differentiable on $U\subset\mathbb{C}$ and satisfy the Cauchy--Riemann equations
+$\frac{\partial u}{\partial x}=\frac{\partial v}{\partial y},
+\frac{\partial u}{\partial y}=-\frac{\partial v}{\partial x}.$
+We can write $f(z)-f(z_0) =(u(x,y)-u(x_0,y_0)) + i(v(x,y)-v(x_0,y_0))=\Delta u+i\Delta v.
+$ from question i. Then $\frac{f(z)-f(z_0)}{z-z_0}=\frac{\Delta u+i\Delta v}{(x-x_0)+(y-y_0)i}.$ Multiplying numerator and denominator by the conjugate $(x-x_0)-(y-y_0)i$, we get
+$\frac{f(z)-f(z_0)}{z-z_0}
+=\frac{(\Delta u+i\Delta v)\big((x-x_0)-(y-y_0)i\big)}
+{(x-x_0)^2+(y-y_0)^2}.$
+Expanding the numerator gives
+\begin{align*}
+(\Delta u+i\Delta v)\big((x-x_0)-(y-y_0)i\big)
+&=\Delta u(x-x_0)+\Delta v(y-y_0)\\
+&\quad+i\big(-\Delta u(y-y_0)+\Delta v(x-x_0)\big).
+\end{align*}
+So $\frac{f(z)-f(z_0)}{z-z_0} = A(x,y)+iB(x,y),$ where
+$ A(x,y)=\frac{\Delta u(x-x_0)+\Delta v(y-y_0)}
+{(x-x_0)^2+(y-y_0)^2}, B(x,y)=\frac{-\Delta u(y-y_0)+\Delta v(x-x_0)}{(x-x_0)^2+(y-y_0)^2}.$
+Since $u$ and $v$ are differentiable at $(x_0,y_0)$, we may write 
+\begin{multline}
+    \Delta u = u_x(x_0,y_0)(x-x_0)+u_y(x_0,y_0)(y-y_0)+o(r) \\
+    \Delta v = v_x(x_0,y_0)(x-x_0)+v_y(x_0,y_0)(y-y_0)+o(r)
+\end{multline}
+where $r=\sqrt{(x-x_0)^2+(y-y_0)^2}$ and $o(r)/r\to0$ as $r\to0$.
+Substituting into $A(x,y)$ and $B(x,y)$ gives
+\begin{align*}
+A(x,y)
+&=\frac{u_x(x_0,y_0)(x-x_0)^2+u_y(x_0,y_0)(x-x_0)(y-y_0)}{r^2}\\
+&\quad+\frac{v_x(x_0,y_0)(x-x_0)(y-y_0)+v_y(x_0,y_0)(y-y_0)^2}{r^2}
++o(1),
+\end{align*}
+and
+\begin{align*}
+B(x,y)
+&=\frac{-u_x(x_0,y_0)(x-x_0)(y-y_0)-u_y(x_0,y_0)(y-y_0)^2}{r^2}\\
+&\quad+\frac{v_x(x_0,y_0)(x-x_0)^2+v_y(x_0,y_0)(x-x_0)(y-y_0)}{r^2}
++o(1).
+\end{align*}
+
+Using the Cauchy--Riemann equations, we simplify to get $A(x,y)\to u_x(x_0,y_0), B(x,y)\to v_x(x_0,y_0)$, as $(x,y)\to(x_0,y_0)$.
+
+Therefore,
+\[
+\lim_{z\to z_0}\frac{f(z)-f(z_0)}{z-z_0}
+=u_x(x_0,y_0)+iv_x(x_0,y_0).
+\]
+This limit exists, so $f$ is complex differentiable at $z_0$ and $f$ is analytic. 
+\end{proof}
+
+\subsection*{iv.}
+Find an example of a function $f: \mathbb{C \rightarrow \mathbb C}$ that is differentiable at a point but not the neighborhood of that point. 
+
+\begin{proof}
+    We want to find $f(z)$ such that $f'(z)$ does not exist near $(0,0)$ but it exists at exactly $(0,0).$  \\
+    $f(z)=z\cdot\bar{z} = |z|^2$, by the multiplication of conjugates we know $z=x+yi,f(z)=(x+yi)\cdot (x-yi)=x^2+y^2$. Here, since there are no imaginary terms, 
+    $\begin{cases}
+        u(x,y)=x^2+y^2,\\
+        v(x,y)=0.
+    \end{cases}$
+    $\lim_{z \rightarrow 0}\frac{f(z)}{z}=\lim_{z \rightarrow 0}\frac{|z|^2}{z}=\lim_{z \rightarrow 0}\bar{z}=0.$ So we proved the function is differentiable at $(0,0).$ \\
+    If f is differentiable, then it should satisfy the Cauchy-Riemann equations. $\frac{\partial u}{\partial x}=\frac{\partial v}{\partial y} \Rightarrow 2x=0, \frac{\partial u}{\partial y }= -\frac{\partial u}{\partial x} \Rightarrow2y=0 $. This means the equations are only satisfied at $(0,0).$ However, at any neighborhood around $(0,0)$, the equations would not be satisfied, meaning $f$ would not be differentiable there. 
+\end{proof}
+
+\clearpage
+
+
+\section*{Problem 4}
+Construct a function $f: \mathbb{R}^2 \rightarrow \mathbb{R},$ which is NOT differentiable at 0, but the directional derivatives at 0 in every direction exist and 
+$$ D_vf(0) =  \nabla f(0) \cdot v  \text{ for every } v \in \mathbb{R}^n.$$
+\begin{proof}
+Define a function f:
+\[
+f(x,y)=
+\begin{cases}
+1, & \text{if } y=x^2 \text{ and } (x,y)\neq(0,0),\\
+0, & \text{otherwise}.
+\end{cases}
+\]
+Let $v=(a,b)\in\mathbb{R}^2$. By definition,
+\[
+D_vf(0,0)=\lim_{t\to0}\frac{f(tv)-f(0,0)}{t}
+=\lim_{t\to0}\frac{f(at,bt)}{t}.
+\]
+For $t\neq0$, we have $f(at,bt)=1 \iff bt=(at)^2\neq0$, which leads to $t=\frac{b}{a^2}\neq0$ (when $a\neq0$). So, for each fixed $v$, there exists at most one nonzero value of $t$ for which $f(at,bt)=1$. For $t\neq0$, we therefore have $f(at,bt)=0$. So,
+\[
+\frac{f(at,bt)}{t}=0
+\quad\text{for all } t\neq0,
+\]
+and it follows that
+\[
+D_vf(0,0)=0.
+\]
+So we know all directional derivatives at $(0,0)$ exist and are equal to $0$. For computing the partial derivatives at $(0,0)$, we use the definition,
+\[
+\frac{\partial f}{\partial x}(0,0)
+=\lim_{h\to0}\frac{f(h,0)-f(0,0)}{h}
+=\lim_{h\to0}\frac{0}{h}=0,
+\]
+because $(h,0)$ does not satisfy $y=x^2$ for $h\neq0$. Similarly,
+\[
+\frac{\partial f}{\partial y}(0,0)
+=\lim_{h\to0}\frac{f(0,h)-f(0,0)}{h}
+=\lim_{h\to0}\frac{0}{h}=0.
+\]
+Thus,
+\[
+\nabla f(0,0)=(0,0).
+\]
+Therefore, for every $v\in\mathbb{R}^2$,
+\[
+D_vf(0,0)=0=\nabla f(0,0)\cdot v.
+\]
+
+Finally, we can show that $f$ is not differentiable at $(0,0)$. Consider the sequence $(x_n,x_n^2)\to(0,0)$ with $x_n\neq0$. Then
+\[
+f(x_n,x_n^2)=1
+\quad\text{for all } n,
+\]
+so
+\[
+\lim_{n\to\infty}f(x_n,x_n^2)=1\neq0=f(0,0).
+\]
+So, $f$ is not continuous at $(0,0)$. Since differentiability implies continuity, $f$ cannot be differentiable at $(0,0)$. $f$ is then not differentiable at the origin, all directional derivatives at $0$ exist, and $D_vf(0,0)=\nabla f(0,0)\cdot v.$
+\end{proof}
+
+
+\clearpage 
+
+\section*{Exercise 4.4.6 Problem 5}
+Show that the function $f : \mathbb{R} \rightarrow \mathbb{R}^2$ given by $f(x) = (x^2, \sin x)$ does not satisfy the property that, given any $x, y \in \mathbb{R}$ with $x < y$, there exists $z \in (x, y)$ such that $f (y) - f (x) = Df (z)(y - x)$.
+
+\begin{proof}
+$f$ is differentiable and $Df(x)=f'(x)=(2x,\cos x).$ Suppose for contradiction, that for all $x<y$ there exists $z\in(x,y)$ s.t. $f(y)-f(x)=Df(z)(y-x).$ Then $(y^2-x^2,\sin y-\sin x)=(2z,\cos z)(y-x),$ so $(y^2-x^2,\sin y-\sin x)=(2z(y-x),(y-x)\cos z).$ Equating components gives
+\[
+\begin{cases}
+y^2-x^2=2z(y-x),\\[6pt]
+\sin y-\sin x=(y-x)\cos z.
+\end{cases}
+\]
+From the first equation, $y^2-x^2=(y-x)(y+x)=2z(y-x).$ Since $y\neq x$, we divide by $y-x$ and we get $y+x=2z$, so $z=\frac{x+y}{2}.$ If we substitute this into the second equation yields $\sin y-\sin x=(y-x)\cos\!\left(\frac{x+y}{2}\right).$
+Using the identity
+\[
+\sin y-\sin x
+=2\cos\!\left(\frac{x+y}{2}\right)\sin\!\left(\frac{y-x}{2}\right),
+\]
+we get
+\[
+2\cos\!\left(\frac{x+y}{2}\right)\sin\!\left(\frac{y-x}{2}\right)
+=(y-x)\cos\!\left(\frac{x+y}{2}\right).
+\]
+\[
+\cos\!\left(\frac{x+y}{2}\right)
+\Big(2\sin\!\left(\frac{y-x}{2}\right)-(y-x)\Big)=0.
+\]
+Now choose $x=0$ and $y=1$. Then
+\[
+z=\frac{1}{2}.
+\]
+which would imply $\sin1=\cos\!\left(\frac12\right).$
+But $\sin1\neq\cos\!\left(\frac12\right)$, which is a contradiction.
+So the mean value theorem doesn't hold here. 
+\end{proof}
+
+
+\end{document}
