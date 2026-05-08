@@ -114,6 +114,7 @@ CHAT_COMPOSER_BOTTOM_OFFSET = "max(1rem, env(safe-area-inset-bottom))"
 CHAT_COMPOSER_MIN_HEIGHT = "3.5rem"
 CHAT_COMPOSER_CONTENT_PADDING = "6rem"
 CHAT_COMPOSER_VIEWPORT_MARGIN = "1rem"
+CHAT_COMPOSER_MAX_WIDTH = "56rem"
 CONVERSATION_MEMORY_STATE_KEY = "conversation_memory"
 APPROX_MAX_CONTEXT_TOKENS = 200000
 APPROX_CONTEXT_COMPACTION_TOKENS = 140000
@@ -1032,7 +1033,7 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
     bottom: 0;
     transform: none;
     width: var(--jenrag-chat-composer-width, calc(100vw - ({CHAT_COMPOSER_VIEWPORT_MARGIN} * 2)));
-    max-width: calc(100vw - ({CHAT_COMPOSER_VIEWPORT_MARGIN} * 2));
+    max-width: min({CHAT_COMPOSER_MAX_WIDTH}, calc(100vw - ({CHAT_COMPOSER_VIEWPORT_MARGIN} * 2)));
     z-index: 30;
     padding-top: 0.25rem;
     padding-bottom: {CHAT_COMPOSER_BOTTOM_OFFSET};
@@ -1061,6 +1062,7 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
 <script>
 (() => {{
     const viewportMarginPixels = 16;
+    const chatComposerMaxWidthPixels = 896;
     const rootElement = document.documentElement;
     const layoutPollIntervalMilliseconds = 150;
     const layoutFollowUpFrameCount = 8;
@@ -1182,7 +1184,8 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
             window.innerWidth - viewportMarginPixels,
             contentRect.right,
         );
-        const safeWidth = Math.max(0, safeRight - safeLeft);
+        const availableWidth = Math.max(0, safeRight - safeLeft);
+        const safeWidth = Math.min(availableWidth, chatComposerMaxWidthPixels);
 
         rootElement.style.setProperty(
             "--jenrag-chat-composer-left",
