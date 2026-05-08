@@ -73,11 +73,14 @@ UNMATCHED_LATEX_UPLOAD_DIRECTORY = "data/unmatched-tex"
 UNMATCHED_PDF_UPLOAD_DIRECTORY = "data/unmatched-pdf"
 SIDEBAR_WIKI_GRAPH_STATE_KEY = "sidebar_wiki_graph"
 SIDEBAR_WIKI_GRAPH_SELECTION_KEY = "sidebar_wiki_graph_selection"
-SIDEBAR_WIKI_GRAPH_HEIGHT = 220
+SIDEBAR_WIKI_GRAPH_HEIGHT = 320
 SIDEBAR_WIKI_GRAPH_SEED_COLOR = "#7EB6FF"
 SIDEBAR_WIKI_GRAPH_RELATED_COLOR = "#4C566A"
 SIDEBAR_WIKI_GRAPH_EDGE_COLOR = "#8A93A2"
 SIDEBAR_WIKI_GRAPH_HIGHLIGHT_COLOR = "#F2CC8F"
+SIDEBAR_WIKI_GRAPH_NODE_SPACING = 220
+SIDEBAR_WIKI_GRAPH_SPRING_LENGTH = 180
+SIDEBAR_WIKI_GRAPH_SPRING_STRENGTH = 0.04
 
 
 def get_missing_chat_configuration() -> list[str]:
@@ -264,7 +267,7 @@ def render_sidebar_wiki_graph(wiki_database_available: bool) -> None:
             graph_nodes.append(
                 Node(
                     id=graph_node_payload["slug"],
-                    label=graph_node_payload["title"],
+                    label="",
                     title=(
                         f"{graph_node_payload['title']} "
                         f"[{graph_node_payload['page_type']}]"
@@ -281,7 +284,6 @@ def render_sidebar_wiki_graph(wiki_database_available: bool) -> None:
                 Edge(
                     source=graph_edge_payload["from_slug"],
                     target=graph_edge_payload["to_slug"],
-                    label=str(graph_edge_payload["relation"]).replace("_", " "),
                     color=SIDEBAR_WIKI_GRAPH_EDGE_COLOR,
                 )
             )
@@ -290,12 +292,32 @@ def render_sidebar_wiki_graph(wiki_database_available: bool) -> None:
             width="100%",
             height=SIDEBAR_WIKI_GRAPH_HEIGHT,
             directed=False,
-            physics=True,
             hierarchical=False,
             collapsible=False,
             staticGraph=False,
             nodeHighlightBehavior=True,
             highlightColor=SIDEBAR_WIKI_GRAPH_HIGHLIGHT_COLOR,
+            labelProperty="title",
+            physics={
+                "enabled": True,
+                "solver": "forceAtlas2Based",
+                "forceAtlas2Based": {
+                    "gravitationalConstant": -80,
+                    "centralGravity": 0.01,
+                    "springLength": SIDEBAR_WIKI_GRAPH_SPRING_LENGTH,
+                    "springConstant": SIDEBAR_WIKI_GRAPH_SPRING_STRENGTH,
+                    "avoidOverlap": 1.2,
+                },
+                "minVelocity": 0.75,
+                "timestep": 0.35,
+            },
+            interaction={
+                "hover": True,
+                "tooltipDelay": 100,
+            },
+            layout={
+                "improvedLayout": True,
+            },
         )
         selected_node_slug = agraph(
             nodes=graph_nodes,
