@@ -98,6 +98,13 @@ UPLOAD_SUBMITTER_NAME_KEY = "upload_submitter_name"
 UPLOAD_SUBMISSION_NOTE_KEY = "upload_submission_note"
 INLINE_MATH_DELIMITER = "$"
 DISPLAY_MATH_DELIMITER = "$$"
+PRIMARY_BLUE_COLOR = "#3755c3"
+SIDEBAR_TEXT_COLOR = "#b8c4ff"
+DARK_BLUE_ACCENT_COLOR = "#00288e"
+SIDEBAR_BACKGROUND_COLOR = "#1e40af"
+MONOSPACE_FONT_FAMILY = (
+    "'SFMono-Regular', 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace"
+)
 
 
 def _delimiter_is_escaped(text: str, delimiter_index: int) -> bool:
@@ -193,6 +200,141 @@ def render_assistant_message_content(content: str) -> None:
             st.latex(segment_value)
         else:
             st.markdown(segment_value)
+
+
+def humanize_course_folder_name(course_folder_name: str) -> str:
+    """Convert `cmsc_27100` into `CMSC 27100` for small UI labels."""
+    folder_segments = course_folder_name.split("_", maxsplit=1)
+    if len(folder_segments) != 2:
+        return course_folder_name.replace("_", " ").upper()
+
+    course_category, course_number = folder_segments
+    return f"{course_category.upper()} {course_number}"
+
+
+def list_markdown_course_folder_names() -> list[str]:
+    """Return sorted display names for top-level course folders under `data/md`."""
+    markdown_root_path = REPOSITORY_ROOT / MARKDOWN_UPLOAD_DIRECTORY
+    if not markdown_root_path.is_dir():
+        return []
+
+    display_names: list[str] = []
+    for course_folder_path in sorted(markdown_root_path.iterdir()):
+        if not course_folder_path.is_dir():
+            continue
+        display_names.append(humanize_course_folder_name(course_folder_path.name))
+    return display_names
+
+
+def inject_application_theme() -> None:
+    """Apply the requested monospace blue theme to the Streamlit app."""
+    st.markdown(
+        f"""
+        <style>
+        html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="stMarkdownContainer"], [data-testid="stChatMessageContent"], input, textarea, button, select {{
+            font-family: {MONOSPACE_FONT_FAMILY};
+        }}
+
+        [data-testid="stAppViewContainer"] {{
+            color: {PRIMARY_BLUE_COLOR};
+        }}
+
+        [data-testid="stSidebar"] {{
+            background: {SIDEBAR_BACKGROUND_COLOR};
+        }}
+
+        [data-testid="stSidebar"] * {{
+            color: {SIDEBAR_TEXT_COLOR};
+        }}
+
+        [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] code,
+        [data-testid="stSidebar"] code,
+        [data-testid="stSidebar"] label,
+        [data-testid="stSidebar"] p,
+        [data-testid="stSidebar"] span {{
+            color: {SIDEBAR_TEXT_COLOR};
+        }}
+
+        [data-testid="stSidebar"] button,
+        [data-testid="stSidebar"] [data-baseweb="select"] > div,
+        [data-testid="stSidebar"] [data-baseweb="input"] > div,
+        [data-testid="stSidebar"] [data-baseweb="textarea"] {{
+            border-color: {SIDEBAR_TEXT_COLOR};
+        }}
+
+        .jenrag-caption-ticker {{
+            position: relative;
+            overflow: hidden;
+            margin-top: -0.25rem;
+            margin-bottom: 1rem;
+            font-size: 0.75rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: {DARK_BLUE_ACCENT_COLOR};
+            white-space: nowrap;
+        }}
+
+        .jenrag-caption-ticker::before,
+        .jenrag-caption-ticker::after {{
+            content: "";
+            position: absolute;
+            top: 0;
+            width: 3rem;
+            height: 100%;
+            z-index: 1;
+        }}
+
+        .jenrag-caption-ticker::before {{
+            left: 0;
+            background: linear-gradient(to right, white, transparent);
+        }}
+
+        .jenrag-caption-ticker::after {{
+            right: 0;
+            background: linear-gradient(to left, white, transparent);
+        }}
+
+        .jenrag-caption-track {{
+            display: inline-flex;
+            min-width: max-content;
+            gap: 2rem;
+            animation: jenrag-scroll-left 22s linear infinite;
+        }}
+
+        @keyframes jenrag-scroll-left {{
+            from {{
+                transform: translateX(0);
+            }}
+            to {{
+                transform: translateX(-50%);
+            }}
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_application_header() -> None:
+    """Render title plus small horizontal-scrolling course caption."""
+    st.title("JenRAG")
+
+    markdown_course_folder_names = list_markdown_course_folder_names()
+    if not markdown_course_folder_names:
+        return
+
+    scrolling_caption = "  •  ".join(markdown_course_folder_names)
+    repeated_scrolling_caption = "  •  ".join(
+        [scrolling_caption, scrolling_caption]
+    )
+    st.markdown(
+        (
+            '<div class="jenrag-caption-ticker" aria-label="Available course folders">'
+            f'<div class="jenrag-caption-track">{repeated_scrolling_caption}</div>'
+            "</div>"
+        ),
+        unsafe_allow_html=True,
+    )
 
 
 def get_missing_chat_configuration() -> list[str]:
@@ -944,7 +1086,8 @@ def render_application() -> None:
     """Render the full Streamlit application."""
     validate_work_type_configuration()
     st.set_page_config(page_title="JenRAG", page_icon="📝", layout="wide")
-    st.title("JenRAG")
+    inject_application_theme()
+    render_application_header()
 
     use_reranker, rerank_top_k = render_sidebar()
     chat_runtime_errors = validate_chat_runtime_state()
