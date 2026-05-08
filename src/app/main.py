@@ -1087,7 +1087,21 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
         }}
 
         const contentRect = contentElement.getBoundingClientRect();
-        const safeLeft = Math.max(viewportMarginPixels, contentRect.left);
+        const sidebarElement = document.querySelector('[data-testid="stSidebar"]');
+        let sidebarSafeLeft = viewportMarginPixels;
+        if (sidebarElement) {{
+            const sidebarRect = sidebarElement.getBoundingClientRect();
+            const sidebarVisibleWidth = Math.max(0, sidebarRect.right - sidebarRect.left);
+            if (sidebarVisibleWidth > 48) {{
+                sidebarSafeLeft = sidebarRect.right + viewportMarginPixels;
+            }}
+        }}
+
+        const safeLeft = Math.max(
+            viewportMarginPixels,
+            contentRect.left,
+            sidebarSafeLeft,
+        );
         const safeRight = Math.min(
             window.innerWidth - viewportMarginPixels,
             contentRect.right,
