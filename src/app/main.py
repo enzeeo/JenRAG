@@ -78,6 +78,7 @@ SIDEBAR_WIKI_GRAPH_SELECTION_KEY = "sidebar_wiki_graph_selection"
 SIDEBAR_WIKI_GRAPH_HEIGHT = 320
 SIDEBAR_WIKI_GRAPH_SEED_COLOR = "#7EB6FF"
 SIDEBAR_WIKI_GRAPH_RELATED_COLOR = "#4C566A"
+MISSING_CONFIGURATION_SENTINELS = {"", "none", "null"}
 SIDEBAR_WIKI_GRAPH_EDGE_COLOR = "#8A93A2"
 SIDEBAR_WIKI_GRAPH_HIGHLIGHT_COLOR = "#F2CC8F"
 SIDEBAR_WIKI_GRAPH_NODE_SPACING = 220
@@ -256,9 +257,35 @@ def get_missing_upload_configuration() -> list[str]:
         "GITHUB_UPLOAD_TOKEN": GITHUB_UPLOAD_TOKEN,
     }
     for setting_name, setting_value in required_settings.items():
-        if not setting_value:
+        if configuration_value_is_missing(setting_value):
             missing_settings.append(setting_name)
     return missing_settings
+
+
+def configuration_value_is_missing(setting_value: object) -> bool:
+    """Return True when a config value is empty or placeholder-like."""
+    if setting_value is None:
+        return True
+
+    normalized_value = str(setting_value).strip().lower()
+    return normalized_value in MISSING_CONFIGURATION_SENTINELS
+
+
+def build_github_upload_client() -> GitHubUploadClient:
+    """Return a validated GitHub upload client or raise a clear config error."""
+    missing_settings = get_missing_upload_configuration()
+    if missing_settings:
+        raise GitHubUploadError(
+            "Upload feature is disabled until these secrets are configured: "
+            + ", ".join(missing_settings)
+        )
+
+    return GitHubUploadClient(
+        repository=str(GITHUB_REPOSITORY).strip(),
+        token=str(GITHUB_UPLOAD_TOKEN).strip(),
+        base_branch=str(GITHUB_BASE_BRANCH),
+        api_base_url=str(GITHUB_API_BASE_URL),
+    )
 
 
 def initialize_upload_form_state() -> None:
@@ -788,12 +815,11 @@ def create_upload_pull_request(
         st.error("Upload is not ready to submit.")
         return
 
-    github_client = GitHubUploadClient(
-        repository=str(GITHUB_REPOSITORY),
-        token=str(GITHUB_UPLOAD_TOKEN),
-        base_branch=str(GITHUB_BASE_BRANCH),
-        api_base_url=str(GITHUB_API_BASE_URL),
-    )
+    try:
+        github_client = build_github_upload_client()
+    except GitHubUploadError as error:
+        st.error(str(error))
+        return
 
     with st.spinner("Creating GitHub pull request..."):
         try:

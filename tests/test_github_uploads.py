@@ -4,6 +4,20 @@ from src.app.github_uploads import build_github_error_message
 
 
 class GitHubUploadErrorMessageTests(unittest.TestCase):
+    def test_unauthorized_error_points_to_upload_token(self) -> None:
+        error_message = build_github_error_message(
+            status_code=401,
+            error_body='{"message":"Bad credentials"}',
+            method="GET",
+            request_path="/repos/example/repository/contents/data%2Fmd",
+        )
+
+        self.assertIn(
+            "with status 401: Bad credentials",
+            error_message,
+        )
+        self.assertIn("Check `GITHUB_UPLOAD_TOKEN`", error_message)
+
     def test_permission_header_is_included_for_personal_access_token_403(self) -> None:
         error_message = build_github_error_message(
             status_code=403,

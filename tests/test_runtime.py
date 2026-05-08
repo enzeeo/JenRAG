@@ -162,6 +162,32 @@ class RetrievalRuntimeTests(unittest.TestCase):
 
 
 class StreamlitDebugRenderingTests(unittest.TestCase):
+    def test_get_missing_upload_configuration_treats_placeholder_values_as_missing(
+        self,
+    ) -> None:
+        main_module = import_main_module()
+
+        with (
+            mock.patch.object(main_module, "GITHUB_REPOSITORY", " enzeeo/JenRAG "),
+            mock.patch.object(main_module, "GITHUB_UPLOAD_TOKEN", " None "),
+        ):
+            self.assertEqual(
+                main_module.get_missing_upload_configuration(),
+                ["GITHUB_UPLOAD_TOKEN"],
+            )
+
+    def test_build_github_upload_client_raises_clear_error_when_token_missing(self) -> None:
+        main_module = import_main_module()
+
+        with (
+            mock.patch.object(main_module, "GITHUB_REPOSITORY", "enzeeo/JenRAG"),
+            mock.patch.object(main_module, "GITHUB_UPLOAD_TOKEN", None),
+        ):
+            with self.assertRaises(main_module.GitHubUploadError) as raised_error:
+                main_module.build_github_upload_client()
+
+        self.assertIn("GITHUB_UPLOAD_TOKEN", str(raised_error.exception))
+
     def test_render_retrieval_debug_renders_chunks_wiki_pages_and_related_topics(self) -> None:
         main_module = import_main_module()
         fake_streamlit = FakeStreamlit()

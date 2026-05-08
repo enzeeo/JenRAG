@@ -217,6 +217,12 @@ def build_github_error_message(
     if status_code == 403 and accepted_permissions:
         error_message += f" Required permissions: {accepted_permissions}."
 
+    if status_code == 401:
+        error_message += (
+            " Check `GITHUB_UPLOAD_TOKEN` in Streamlit secrets or environment. "
+            "Token may be missing, expired, or pointed at wrong account/repository."
+        )
+
     return error_message
 
 
