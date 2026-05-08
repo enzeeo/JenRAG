@@ -17,6 +17,18 @@ def init_collection(path: str, name: str):
     return client.get_or_create_collection(name=name)
 
 
+def reset_collection(path: str, name: str):
+    """Delete and recreate a collection for a clean full rebuild."""
+    import chromadb
+
+    client = chromadb.PersistentClient(path=path)
+    try:
+        client.delete_collection(name=name)
+    except Exception:
+        pass
+    return client.get_or_create_collection(name=name)
+
+
 def chunk_id(chunk: Chunk) -> str:
     """Deterministic ID from chunk content so re-runs are idempotent."""
     title = chunk.metadata.get("title", "")
@@ -81,3 +93,21 @@ def query(
 def get_all_documents(collection: chromadb.Collection) -> dict[str, list]:
     """Return all stored chunks with ids, documents, and metadata."""
     return collection.get(include=["documents", "metadatas"])
+
+
+def get_embedded_source_paths(collection: chromadb.Collection) -> set[str]:
+    """Return all stored Markdown source paths from collection metadata."""
+    records = collection.get(include=["metadatas"])
+    source_paths: set[str] = set()
+    for metadata in records.get("metadatas", []):
+        if metadata is None:
+            continue
+        source_path = metadata.get("source_path")
+        if source_path:
+            source_paths.add(str(source_path))
+    return source_paths
+
+
+def delete_chunks_by_source_path(collection: chromadb.Collection, source_path: str) -> None:
+    """Delete all chunks associated with one source Markdown path."""
+    collection.delete(where={"source_path": source_path})

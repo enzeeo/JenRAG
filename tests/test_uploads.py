@@ -3,6 +3,8 @@ import unittest
 from src.app.uploads import (
     UploadValidationError,
     build_filename_stem,
+    build_markdown_target_path,
+    build_raw_target_path,
     build_target_path,
     normalize_upload_metadata,
     validate_uploaded_file,
@@ -79,6 +81,27 @@ class UploadHelpersTests(unittest.TestCase):
             "data/latex/math_20400/math_20400_win_2026_hw1_janos.tex",
         )
 
+    def test_raw_target_path_uses_unmatched_latex_tree_without_matching_markdown(self) -> None:
+        metadata = normalize_upload_metadata(
+            course_category="MATH",
+            course_number="20400",
+            quarter="win",
+            year="2026",
+            work_type="hw",
+            work_number="1",
+            custom_work_type="",
+            professor_last_name="Janos",
+            submitter_email="student@example.edu",
+            submission_note="",
+        )
+
+        target_path = build_raw_target_path(metadata, ".tex", matching_markdown_exists=False)
+
+        self.assertEqual(
+            target_path,
+            "data/unmatched-tex/math_20400/math_20400_win_2026_hw1_janos.tex",
+        )
+
     def test_target_path_uses_pdf_tree_for_pdf_files(self) -> None:
         metadata = normalize_upload_metadata(
             course_category="MATH",
@@ -100,6 +123,27 @@ class UploadHelpersTests(unittest.TestCase):
             "data/pdf/math_20400/math_20400_win_2026_hw1_janos.pdf",
         )
 
+    def test_raw_target_path_uses_unmatched_pdf_tree_without_matching_markdown(self) -> None:
+        metadata = normalize_upload_metadata(
+            course_category="MATH",
+            course_number="20400",
+            quarter="win",
+            year="2026",
+            work_type="hw",
+            work_number="1",
+            custom_work_type="",
+            professor_last_name="Janos",
+            submitter_email="student@example.edu",
+            submission_note="",
+        )
+
+        target_path = build_raw_target_path(metadata, ".pdf", matching_markdown_exists=False)
+
+        self.assertEqual(
+            target_path,
+            "data/unmatched-pdf/math_20400/math_20400_win_2026_hw1_janos.pdf",
+        )
+
     def test_target_path_uses_markdown_tree_for_markdown_files(self) -> None:
         metadata = normalize_upload_metadata(
             course_category="MATH",
@@ -118,6 +162,25 @@ class UploadHelpersTests(unittest.TestCase):
 
         self.assertEqual(
             target_path,
+            "data/md/math_20400/math_20400_win_2026_hw1_janos.md",
+        )
+
+    def test_build_markdown_target_path_matches_markdown_upload_target(self) -> None:
+        metadata = normalize_upload_metadata(
+            course_category="MATH",
+            course_number="20400",
+            quarter="win",
+            year="2026",
+            work_type="hw",
+            work_number="1",
+            custom_work_type="",
+            professor_last_name="Janos",
+            submitter_email="student@example.edu",
+            submission_note="",
+        )
+
+        self.assertEqual(
+            build_markdown_target_path(metadata),
             "data/md/math_20400/math_20400_win_2026_hw1_janos.md",
         )
 

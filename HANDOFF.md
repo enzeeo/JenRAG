@@ -2,68 +2,73 @@
 
 ## Current Status
 
-StudyGraph wiki expansion work is complete through `TASK-1.4`.
+Incremental upload, conversion, and embedding workflow is now implemented.
 
-- `TASK-1.1` through `TASK-1.4` are marked `Done`.
-- Parent task `TASK-1` is marked `Done`.
-- The repo now has structured corpus ingestion, wiki artifact generation, runtime wiki retrieval, chat debug support for wiki results, and operator docs for the rebuild-review-publish workflow.
+- Raw upload routing now distinguishes matched vs unmatched `.tex` / `.pdf`
+- Canonical Markdown remains `data/md/...`
+- Embedding now supports full rebuild, missing-only, and targeted refresh
+- Raw-source conversion commands now exist for missing-only and targeted runs
 
 ## Completed This Session
 
-- Closed `TASK-1.4` in Backlog with implementation notes and checked acceptance criteria.
-- Closed parent `TASK-1` in Backlog because all four subtasks are complete.
-- Added a project handoff file for future sessions.
+- Added matched vs unmatched raw upload routing for GitHub-backed uploads.
+- Added `embed-all`, `embed-missing`, and `embed-files` commands.
+- Added `convert-missing` and `convert-files` commands with `--source-type all|tex|pdf`.
+- Added OpenAI-compatible conversion service for `.tex` and extracted `.pdf` text.
+- Updated `README.md` to document the new workflow.
 
 ## Files Changed
 
 | File | Purpose |
 |---|---|
-| `backlog/tasks/task-1.4 - Document-and-validate-the-admin-rebuild-review-publish-workflow.md` | Marked complete and recorded final implementation notes, files, and validation commands. |
-| `backlog/tasks/task-1 - Deliver-StudyGraph-wiki-expansion-roadmap.md` | Marked complete and updated the parent summary after all subtasks finished. |
-| `HANDOFF.md` | Captures current repo state for the next agent session. |
+| `src/app/uploads.py` | Added canonical Markdown path helper and matched/unmatched raw upload path routing. |
+| `src/app/main.py` | Resolved upload target paths against base-branch Markdown presence and updated upload UI copy. |
+| `src/pipeline/corpus.py` | Added requested-Markdown path loading for targeted embedding. |
+| `src/pipeline/vectorstore.py` | Added collection reset, embedded source-path lookup, and delete-by-source-path helpers. |
+| `src/pipeline/config.py` | Added conversion config values. |
+| `src/pipeline/conversion.py` | Added OpenAI-compatible raw-source to Markdown conversion service. |
+| `src/ingest/ingest.py` | Converted old ingest entrypoint into backward-compatible full rebuild alias. |
+| `src/ingest/embed.py` | Added full rebuild, missing-only, and targeted embedding commands. |
+| `src/ingest/convert.py` | Added missing-only and targeted raw-source conversion commands. |
+| `pyproject.toml` | Registered new CLI scripts and `pypdf` dependency. |
+| `tests/test_uploads.py` | Added matched/unmatched upload routing coverage. |
+| `tests/test_embed_commands.py` | Added embed helper coverage. |
+| `tests/test_convert_commands.py` | Added conversion candidate and path-mapping coverage. |
+| `README.md` | Updated operator workflow and command documentation. |
+| `HANDOFF.md` | Replaced stale summary with current session state. |
 
 ## Commands Run
 
 ```bash
-python3 -m unittest tests.test_eval_harness
-python3 -m unittest tests.test_runtime tests.test_corpus tests.test_uploads tests.test_wiki_build
-python3 -m compileall src/eval/harness.py tests/test_eval_harness.py
-sed -n '1,240p' 'backlog/tasks/task-1.4 - Document-and-validate-the-admin-rebuild-review-publish-workflow.md'
-sed -n '1,220p' 'backlog/tasks/task-1 - Deliver-StudyGraph-wiki-expansion-roadmap.md'
-git status --short
-git diff --name-only
-git diff --stat
-```
-
-Result:
-
-```text
-Unit tests and compile checks passed.
-Backlog verification checks matched the completed state.
-Working tree was clean before adding HANDOFF.md.
+python3 -m unittest tests.test_uploads tests.test_embed_commands tests.test_convert_commands
+python3 -m compileall src tests
+python3 -m unittest tests.test_corpus tests.test_runtime tests.test_uploads tests.test_embed_commands tests.test_convert_commands
+python3 -m compileall src tests
+git -C /Users/enzeeo/bluescreen/JenRAG diff -- src/app/uploads.py src/app/main.py src/pipeline/corpus.py src/pipeline/vectorstore.py src/ingest/ingest.py src/ingest/embed.py src/ingest/convert.py src/pipeline/conversion.py pyproject.toml tests/test_uploads.py tests/test_embed_commands.py tests/test_convert_commands.py
 ```
 
 ## Tests and Checks
 
-- `python3 -m unittest tests.test_eval_harness`: passed
-- `python3 -m unittest tests.test_runtime tests.test_corpus tests.test_uploads tests.test_wiki_build`: passed
-- `python3 -m compileall src/eval/harness.py tests/test_eval_harness.py`: passed
-- Backlog task file re-read after edits: verified
+- `python3 -m unittest tests.test_uploads tests.test_embed_commands tests.test_convert_commands`: passed
+- `python3 -m unittest tests.test_corpus tests.test_runtime tests.test_uploads tests.test_embed_commands tests.test_convert_commands`: passed
+- `python3 -m compileall src tests`: passed
 
 ## Important Decisions
 
-- Backlog was updated as work progressed rather than deferred to the end.
-- `TASK-1` was closed because all child tasks were complete, not left open as a container.
-- The evaluation harness now reflects StudyGraph workflows instead of the stale domain-specific fixture set.
-- Operator documentation treats Chroma as the primary retrieval store and the wiki as a generated sidecar that must be reviewed before commit.
+- Upload routing decision happens at upload time, not after PR merge.
+- Same-stem Markdown presence on `GITHUB_BASE_BRANCH` decides whether raw uploads go to matched or unmatched folders.
+- `uv run ingest` remains available as the full rebuild alias for backward compatibility.
+- `embed-missing` treats existing Chroma `source_path` metadata as the embedded-state marker.
+- Raw conversion scans both matched and unmatched raw trees and prefers `.tex` over `.pdf` when both map to the same missing Markdown target.
 
 ## Known Issues
 
-- No additional open implementation tasks are tracked under `TASK-1`.
-- `HANDOFF.md` is newly added and not yet referenced from other project docs.
+- PDF conversion depends on `pypdf` text extraction quality. Image-only or poorly encoded PDFs may still need manual cleanup after conversion.
+- `README.md` now reflects the new workflow, but `DEPLOYMENT.md` was not updated in this session.
+- Conversion commands were verified through path-selection tests, not live API conversion calls.
 
 ## Next Recommended Steps
 
-1. Review the final diff and commit the completed wiki expansion work if that has not happened yet.
-2. Run an end-to-end manual smoke test in the Streamlit app against a real uploaded course corpus.
-3. If more work is planned, open a new backlog task instead of reopening `TASK-1`.
+1. Run a live smoke test with a real `.tex` upload, a real unmatched `.pdf` upload, `uv run convert-missing`, `uv run embed-missing`, and `uv run build-wiki`.
+2. If deployment docs must stay fully aligned with README, update `DEPLOYMENT.md` next.
+3. If conversion quality is noisy on real PDFs, add review heuristics or chunked conversion later.

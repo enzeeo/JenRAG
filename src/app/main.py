@@ -10,6 +10,8 @@ from src.app.uploads import (
     UploadValidationError,
     ValidatedUploadedFile,
     build_filename_stem,
+    build_markdown_target_path,
+    build_raw_target_path,
     build_target_path,
     build_upload_branch_name,
     normalize_upload_metadata,
@@ -231,9 +233,10 @@ def render_upload_tab() -> None:
         "The app will open a GitHub pull request into the repo."
     )
     st.info(
-        "Markdown uploads are ingest-ready. PDF and LaTeX uploads are stored as raw "
-        "source artifacts and may need maintainer conversion into `data/md` before "
-        "running `uv run ingest`."
+        "Markdown uploads are ingest-ready. PDF and LaTeX uploads route into matched "
+        "or unmatched raw-source folders based on whether canonical Markdown already "
+        "exists on the base branch. Raw uploads may still need maintainer conversion "
+        "into `data/md` before running `uv run ingest`."
     )
 
     missing_upload_settings = get_missing_upload_configuration()
@@ -333,12 +336,36 @@ def render_upload_tab() -> None:
 
     target_path = ""
     if validated_upload is not None and upload_metadata is not None:
-        target_path = build_target_path(upload_metadata, validated_upload.extension)
         filename_stem = build_filename_stem(upload_metadata)
         st.markdown("**Filename Preview**")
         st.code(f"{filename_stem}{validated_upload.extension}")
-        st.markdown("**Target Path Preview**")
-        st.code(target_path)
+        if validated_upload.extension == ".md":
+            target_path = build_target_path(upload_metadata, validated_upload.extension)
+            st.markdown("**Target Path Preview**")
+            st.code(target_path)
+        else:
+            matching_markdown_path = build_markdown_target_path(upload_metadata)
+            matched_target_path = build_raw_target_path(
+                upload_metadata=upload_metadata,
+                extension=validated_upload.extension,
+                matching_markdown_exists=True,
+            )
+            unmatched_target_path = build_raw_target_path(
+                upload_metadata=upload_metadata,
+                extension=validated_upload.extension,
+                matching_markdown_exists=False,
+            )
+            st.markdown("**Target Path Preview**")
+            st.code(
+                "matching markdown exists -> "
+                f"{matched_target_path}\n"
+                "matching markdown missing -> "
+                f"{unmatched_target_path}"
+            )
+            st.caption(
+                f"Canonical Markdown path checked on `{GITHUB_BASE_BRANCH}`: "
+                f"`{matching_markdown_path}`"
+            )
     elif form_has_started:
         st.info("Complete all required fields to preview the final path.")
 
@@ -373,9 +400,15 @@ def create_upload_pull_request(
 
     with st.spinner("Creating GitHub pull request..."):
         try:
+            target_path = resolve_upload_target_path(
+                github_client=github_client,
+                upload_metadata=upload_metadata,
+                extension=validated_upload.extension,
+            )
+
             if github_client.path_exists_on_base_branch(target_path):
                 st.error(
-                    "A file already exists at this path on the main branch:\n"
+                    "A file already exists at this path on the base branch:\n"
                     f"`{target_path}`"
                 )
                 return
@@ -406,10 +439,33 @@ def create_upload_pull_request(
     )
     st.markdown(f"[Open pull request]({pull_request_result.html_url})")
     st.info(
-        "After merge, a maintainer may need to convert `.pdf` or `.tex` uploads "
-        "into `data/md` first. Search updates still require re-running `ingest`, "
-        "re-running `build-wiki`, and committing `data/chroma_db`, "
-        "`data/wiki.sqlite3`, and `data/wiki_report.md`."
+        "After merge, raw `.pdf` or `.tex` uploads may land in matched or unmatched "
+        "raw-source folders depending on whether canonical Markdown already existed. "
+        "Maintainers may still need to convert raw uploads into `data/md` first. "
+        "Search updates still require re-running `ingest`, re-running `build-wiki`, "
+        "and committing `data/chroma_db`, `data/wiki.sqlite3`, and "
+        "`data/wiki_report.md`."
+    )
+
+
+def resolve_upload_target_path(
+    github_client: GitHubUploadClient,
+    upload_metadata: UploadMetadata,
+    extension: str,
+) -> str:
+    """Resolve final repo path for an upload using base-branch Markdown presence."""
+    normalized_extension = extension.strip().lower()
+    if normalized_extension == ".md":
+        return build_markdown_target_path(upload_metadata)
+
+    matching_markdown_path = build_markdown_target_path(upload_metadata)
+    matching_markdown_exists = github_client.path_exists_on_base_branch(
+        matching_markdown_path
+    )
+    return build_raw_target_path(
+        upload_metadata=upload_metadata,
+        extension=normalized_extension,
+        matching_markdown_exists=matching_markdown_exists,
     )
 
 

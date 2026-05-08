@@ -8,6 +8,8 @@ import re
 MARKDOWN_UPLOAD_DIRECTORY = "data/md"
 LATEX_UPLOAD_DIRECTORY = "data/latex"
 PDF_UPLOAD_DIRECTORY = "data/pdf"
+UNMATCHED_LATEX_UPLOAD_DIRECTORY = "data/unmatched-tex"
+UNMATCHED_PDF_UPLOAD_DIRECTORY = "data/unmatched-pdf"
 MAX_MARKDOWN_UPLOAD_SIZE_BYTES = 2 * 1024 * 1024
 MAX_LATEX_UPLOAD_SIZE_BYTES = 2 * 1024 * 1024
 MAX_PDF_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024
@@ -198,17 +200,58 @@ def build_filename_stem(upload_metadata: UploadMetadata) -> str:
 def build_target_path(upload_metadata: UploadMetadata, extension: str) -> str:
     """Return repo path for a validated upload."""
     normalized_extension = extension.strip().lower()
+    if normalized_extension == ".md":
+        return build_markdown_target_path(upload_metadata)
+    if normalized_extension == ".tex":
+        return build_raw_target_path(
+            upload_metadata=upload_metadata,
+            extension=normalized_extension,
+            matching_markdown_exists=True,
+        )
+    if normalized_extension == ".pdf":
+        return build_raw_target_path(
+            upload_metadata=upload_metadata,
+            extension=normalized_extension,
+            matching_markdown_exists=True,
+        )
+
+    raise UploadValidationError("Only .md, .tex, and .pdf uploads are supported.")
+
+
+def build_markdown_target_path(upload_metadata: UploadMetadata) -> str:
+    """Return canonical Markdown repo path for an upload."""
+    filename_stem = build_filename_stem(upload_metadata)
+    course_folder = build_course_folder(upload_metadata)
+    return f"{MARKDOWN_UPLOAD_DIRECTORY}/{course_folder}/{filename_stem}.md"
+
+
+def build_raw_target_path(
+    upload_metadata: UploadMetadata,
+    extension: str,
+    matching_markdown_exists: bool,
+) -> str:
+    """Return matched or unmatched raw-source path for a `.tex` or `.pdf` upload."""
+    normalized_extension = extension.strip().lower()
     filename_stem = build_filename_stem(upload_metadata)
     course_folder = build_course_folder(upload_metadata)
 
     if normalized_extension == ".tex":
-        return f"{LATEX_UPLOAD_DIRECTORY}/{course_folder}/{filename_stem}.tex"
-    if normalized_extension == ".pdf":
-        return f"{PDF_UPLOAD_DIRECTORY}/{course_folder}/{filename_stem}.pdf"
-    if normalized_extension == ".md":
-        return f"{MARKDOWN_UPLOAD_DIRECTORY}/{course_folder}/{filename_stem}.md"
+        base_directory = (
+            LATEX_UPLOAD_DIRECTORY
+            if matching_markdown_exists
+            else UNMATCHED_LATEX_UPLOAD_DIRECTORY
+        )
+        return f"{base_directory}/{course_folder}/{filename_stem}.tex"
 
-    raise UploadValidationError("Only .md, .tex, and .pdf uploads are supported.")
+    if normalized_extension == ".pdf":
+        base_directory = (
+            PDF_UPLOAD_DIRECTORY
+            if matching_markdown_exists
+            else UNMATCHED_PDF_UPLOAD_DIRECTORY
+        )
+        return f"{base_directory}/{course_folder}/{filename_stem}.pdf"
+
+    raise UploadValidationError("Raw upload path only supports .tex and .pdf files.")
 
 
 def validate_uploaded_file(file_name: str, file_bytes: bytes) -> ValidatedUploadedFile:

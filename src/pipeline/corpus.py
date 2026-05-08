@@ -21,7 +21,10 @@ class CorpusDocument:
     metadata: dict[str, str]
 
 
-def discover_corpus_paths(data_dir: str | Path) -> list[Path]:
+def discover_corpus_paths(
+    data_dir: str | Path,
+    requested_paths: list[str | Path] | None = None,
+) -> list[Path]:
     """Return structured Markdown corpus files from `data/md`."""
     root_path = Path(data_dir)
     if not root_path.exists():
@@ -30,6 +33,9 @@ def discover_corpus_paths(data_dir: str | Path) -> list[Path]:
     structured_root = root_path / MARKDOWN_DIRECTORY_NAME
     if not structured_root.exists():
         return []
+
+    if requested_paths is not None:
+        return resolve_requested_markdown_paths(root_path, requested_paths)
 
     return sorted(
         path
@@ -40,11 +46,12 @@ def discover_corpus_paths(data_dir: str | Path) -> list[Path]:
 
 def load_corpus_documents(
     data_dir: str | Path,
+    requested_paths: list[str | Path] | None = None,
 ) -> tuple[list[CorpusDocument], list[str]]:
     """Load structured Markdown corpus files."""
     root_path = Path(data_dir)
     warnings: list[str] = []
-    discovered_paths = discover_corpus_paths(root_path)
+    discovered_paths = discover_corpus_paths(root_path, requested_paths=requested_paths)
     grouped_paths: dict[str, list[Path]] = {}
 
     for path in discovered_paths:
@@ -82,8 +89,52 @@ def load_corpus_documents(
     return documents, warnings
 
 
+def resolve_requested_markdown_paths(
+    root_path: Path,
+    requested_paths: list[str | Path],
+) -> list[Path]:
+    """Resolve requested Markdown paths relative to `data/` and validate shape."""
+    resolved_paths: list[Path] = []
+    seen_relative_paths: set[str] = set()
+
+    for requested_path in requested_paths:
+        candidate_path = Path(requested_path)
+        if not candidate_path.is_absolute():
+            candidate_path = root_path / candidate_path
+
+        normalized_candidate_path = candidate_path.resolve(strict=False)
+        try:
+            relative_path = normalized_candidate_path.relative_to(root_path.resolve())
+        except ValueError as error:
+            raise ValueError(
+                f"Requested Markdown path must stay inside {root_path}: {requested_path}"
+            ) from error
+
+        if (
+            len(relative_path.parts) < 3
+            or relative_path.parts[0] != MARKDOWN_DIRECTORY_NAME
+            or normalized_candidate_path.suffix.lower() != MARKDOWN_EXTENSION
+        ):
+            raise ValueError(
+                f"Requested Markdown path must be under data/md and end in .md: {requested_path}"
+            )
+
+        if not normalized_candidate_path.exists():
+            raise ValueError(f"Requested Markdown path does not exist: {requested_path}")
+        if not normalized_candidate_path.is_file():
+            raise ValueError(f"Requested Markdown path is not a file: {requested_path}")
+
+        relative_path_text = relative_path.as_posix()
+        if relative_path_text in seen_relative_paths:
+            continue
+        seen_relative_paths.add(relative_path_text)
+        resolved_paths.append(normalized_candidate_path)
+
+    return sorted(resolved_paths)
+
+
 def build_document_group_key(root_path: Path, path: Path) -> str:
-    relative_path = path.relative_to(root_path)
+    relative_path = path.resolve(strict=False).relative_to(root_path.resolve(strict=False))
     if len(relative_path.parts) >= 3 and relative_path.parts[0] == MARKDOWN_DIRECTORY_NAME:
         return f"{relative_path.parts[1]}/{path.stem}"
     return relative_path.stem
@@ -102,7 +153,7 @@ def extract_document_text(path: Path) -> tuple[str, str | None]:
 
 
 def build_document_metadata(root_path: Path, path: Path) -> dict[str, str]:
-    relative_path = path.relative_to(root_path)
+    relative_path = path.resolve(strict=False).relative_to(root_path.resolve(strict=False))
     metadata: dict[str, str] = {
         "title": humanize_title_from_path(path),
         "source_path": str(relative_path),

@@ -69,13 +69,14 @@ Create a `.env` file in the project root.
 For local development with an existing corpus:
 
 ```bash
-uv run ingest
+uv run convert-missing
+uv run embed-missing
 uv run build-wiki
 uv run streamlit run src/app/main.py
 ```
 
-That sequence rebuilds the retrieval artifacts, rebuilds the wiki sidecar, and
-starts the chat UI.
+That sequence converts missing raw source files into canonical Markdown, updates
+only new embeddings, rebuilds the wiki sidecar, and starts the chat UI.
 
 ## Online Deployment
 
@@ -106,6 +107,7 @@ Core variables:
 | `OPENAI_BASE_URL` | Base URL for your OpenAI-compatible API. Leave unset only if you want the provider default |
 | `CHAT_MODEL` | Chat model used for answer generation |
 | `EMBEDDING_MODEL` | Embedding model used for document and query embeddings |
+| `CONVERSION_MODEL` | Chat model used to convert `.tex` and extracted `.pdf` text into Markdown |
 | `DATA_DIR` | Root directory for generated and input data. Default: `./data` |
 | `CHROMA_DB_PATH` | ChromaDB directory. Default: `./data/chroma_db` |
 | `CHROMA_COLLECTION_NAME` | Collection name. Default in code: `pset_problems` |
@@ -115,6 +117,7 @@ Optional variables:
 - `EMBEDDING_BATCH_SIZE`
 - `EMBEDDING_DOC_PREFIX`
 - `EMBEDDING_QUERY_PREFIX`
+- `CONVERSION_MAX_TOKENS`
 - `RETRIEVAL_TOP_K`
 - `RERANK_TOP_K`
 - `WIKI_DB_PATH`
@@ -162,15 +165,26 @@ Uploaded files are stored in these repository paths:
 data/md/<course_category>_<course_number>/<normalized_filename>.md
 data/latex/<course_category>_<course_number>/<normalized_filename>.tex
 data/pdf/<course_category>_<course_number>/<normalized_filename>.pdf
+data/unmatched-tex/<course_category>_<course_number>/<normalized_filename>.tex
+data/unmatched-pdf/<course_category>_<course_number>/<normalized_filename>.pdf
 ```
 
-For example:
+Routing rules:
+
+- `.md` uploads always go to `data/md/...`
+- `.tex` uploads go to `data/latex/...` when the canonical Markdown path already
+  exists on `GITHUB_BASE_BRANCH`; otherwise they go to `data/unmatched-tex/...`
+- `.pdf` uploads go to `data/pdf/...` when the canonical Markdown path already
+  exists on `GITHUB_BASE_BRANCH`; otherwise they go to `data/unmatched-pdf/...`
+
+Examples:
 
 ```text
 data/md/cmsc_27200/cmsc_27200_win_2026_pset1_janos.md
 data/latex/cmsc_27100/cmsc_27100_fall_2025_pset1_ng.tex
 data/pdf/cmsc_27200/cmsc_27200_win_2026_pset2_janos.pdf
-data/latex/cmsc_27100/cmsc_27100_fall_2025_lec2_ng.tex
+data/unmatched-tex/cmsc_27100/cmsc_27100_fall_2025_lec2_ng.tex
+data/unmatched-pdf/cmsc_27200/cmsc_27200_win_2026_pset5_janos.pdf
 ```
 
 This is a review workflow, not direct runtime storage. A maintainer still needs
@@ -178,15 +192,19 @@ to review and merge the pull request before the file exists on the main branch.
 After merge:
 
 1. `.md` uploads are ingest-ready and can go straight into the rebuild flow
-2. `.pdf` and `.tex` uploads are preserved as raw source artifacts and may need
-   manual conversion into reviewed Markdown under `data/md/`
+2. matched `.pdf` and `.tex` uploads stay in `data/pdf/` or `data/latex/`
+3. unmatched `.pdf` and `.tex` uploads stay in `data/unmatched-pdf/` or
+   `data/unmatched-tex/`
+4. raw uploads may need conversion into reviewed Markdown under `data/md/`
 3. the file is not searchable until a maintainer rebuilds both search artifacts
    locally
 
-1. `uv run ingest`
-2. `uv run build-wiki`
-3. review `data/wiki_report.md`
-4. commit `data/chroma_db/`, `data/wiki.sqlite3`, and `data/wiki_report.md`
+1. `uv run convert-missing`
+2. review generated Markdown under `data/md/`
+3. `uv run embed-missing`
+4. `uv run build-wiki`
+5. review `data/wiki_report.md`
+6. commit `data/chroma_db/`, `data/wiki.sqlite3`, and `data/wiki_report.md`
 
 Current upload limits:
 
@@ -214,34 +232,78 @@ The upload workflow may also store raw source artifacts under:
 ```text
 data/latex/<course_category>_<course_number>/**/*.tex
 data/pdf/<course_category>_<course_number>/**/*.pdf
+data/unmatched-tex/<course_category>_<course_number>/**/*.tex
+data/unmatched-pdf/<course_category>_<course_number>/**/*.pdf
 ```
 
 Those raw files are kept for provenance and review, but they are not the
 canonical ingest input. Maintainers may need to convert them into reviewed
-Markdown files under `data/md/` before running `uv run ingest`.
+Markdown files under `data/md/` before running an embedding command.
 
 ## Main Workflow
 
 1. Add or merge ingest-ready study documents under `data/md/`
-2. Rebuild Chroma retrieval artifacts
-3. Rebuild the wiki sidecar and review its report
-4. Run the Streamlit app
-5. Ask for summaries, explanations, or similar practice questions
+2. Convert missing raw source files if needed
+3. Rebuild Chroma retrieval artifacts
+4. Rebuild the wiki sidecar and review its report
+5. Run the Streamlit app
+6. Ask for summaries, explanations, or similar practice questions
 
-### 1. Ingest documents
+### 1. Convert raw files when needed
+
+```bash
+uv run convert-missing
+```
+
+Optional filters:
+
+```bash
+uv run convert-missing --source-type tex
+uv run convert-missing --source-type pdf
+uv run convert-files --source-type all --path data/unmatched-tex/cmsc_27100/file.tex
+```
+
+This will:
+
+- scan matched and unmatched raw source trees
+- derive canonical Markdown targets under `data/md/`
+- skip sources whose Markdown target already exists
+- prefer `.tex` over `.pdf` when both map to the same missing Markdown file
+
+### 2. Embed documents
+
+Full rebuild:
 
 ```bash
 uv run ingest
 ```
 
-This will:
+Incremental update for new Markdown only:
+
+```bash
+uv run embed-missing
+```
+
+Targeted refresh for selected Markdown files:
+
+```bash
+uv run embed-files --path data/md/cmsc_27200/cmsc_27200_win_2026_pset1_janos.md
+```
+
+Embedding commands:
 
 - load Markdown files recursively from `data/md/`
 - split them into chunks
 - embed the chunks
 - store them in ChromaDB
 
-### 2. Build wiki artifacts
+Mode summary:
+
+- `uv run ingest` or `uv run embed-all`: clear collection, then rebuild all Markdown
+- `uv run embed-missing`: add only Markdown files whose `source_path` is not yet in Chroma metadata
+- `uv run embed-files`: delete old chunks for specific Markdown files, then re-embed only those files
+
+### 3. Build wiki artifacts
 
 ```bash
 uv run build-wiki
@@ -252,7 +314,7 @@ This writes:
 - `data/wiki.sqlite3` for runtime wiki retrieval
 - `data/wiki_report.md` for operator review before publishing artifacts
 
-### 3. Run the chat UI
+### 4. Run the chat UI
 
 ```bash
 uv run streamlit run src/app/main.py
