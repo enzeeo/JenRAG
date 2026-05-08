@@ -8,6 +8,28 @@ log = logging.getLogger(__name__)
 
 _client = None
 
+PRACTICE_REQUEST_KEYWORDS = (
+    "practice question",
+    "practice questions",
+    "practice problem",
+    "practice problems",
+    "similar question",
+    "similar questions",
+    "similar problem",
+    "similar problems",
+    "new question",
+    "new questions",
+    "new problem",
+    "new problems",
+    "homework problem",
+    "homework problems",
+    "generate a question",
+    "generate questions",
+    "generate a problem",
+    "generate problems",
+    "come up with",
+)
+
 
 def _get_client():
     global _client
@@ -40,6 +62,21 @@ Rules:
 
 --- END EVIDENCE ---"""
 
+PRACTICE_GENERATION_PROMPT_SUFFIX = """
+
+Practice-generation rules:
+- If the user asks for a homework problem, practice problem, or similar question, you may create a NEW question instead of copying a retrieved one.
+- The new question must stay grounded in retrieved material: same course topics, same kind of reasoning, and comparable difficulty/style.
+- The new question must be meaningfully different from retrieved questions. Change the surface form enough to create variation, not a near-duplicate.
+- Before you present the question, solve it completely in private and verify that the final answer is correct and consistent with the retrieved evidence.
+- If you cannot privately verify a correct solution from the retrieved evidence, do not invent a question. Say the evidence is not strong enough to safely generate a verified problem.
+- Do not reveal your private verification process or chain-of-thought.
+- In the final answer, provide:
+  1. a clearly labeled new practice question,
+  2. a concise final answer or solution check,
+  3. a short note explaining which retrieved material inspired it.
+"""
+
 
 def build_context(retrieval_result: RetrievalResult) -> str:
     """Format chunk hits, wiki hits, and related topics for the system prompt."""
@@ -71,6 +108,21 @@ def build_context(retrieval_result: RetrievalResult) -> str:
     return "\n".join(lines)
 
 
+def is_practice_generation_request(query: str) -> bool:
+    """Return whether the user is asking for a new grounded practice-style problem."""
+    normalized_query = query.casefold()
+    return any(keyword in normalized_query for keyword in PRACTICE_REQUEST_KEYWORDS)
+
+
+def build_system_prompt(query: str, retrieval_result: RetrievalResult) -> str:
+    """Build the system prompt, adding stricter practice-generation rules when needed."""
+    context = build_context(retrieval_result)
+    system_prompt = SYSTEM_PROMPT.format(context=context)
+    if is_practice_generation_request(query):
+        system_prompt += PRACTICE_GENERATION_PROMPT_SUFFIX
+    return system_prompt
+
+
 def generate(
     query: str,
     retrieval_result: RetrievalResult,
@@ -78,8 +130,7 @@ def generate(
     max_tokens: int = 1024,
 ) -> str:
     """Generate an answer from retrieved chunks."""
-    context = build_context(retrieval_result)
-    system = SYSTEM_PROMPT.format(context=context)
+    system = build_system_prompt(query, retrieval_result)
 
     log.info(
         "Generating with %s chunks, %s wiki pages, %s related topics, ~%s prompt tokens",

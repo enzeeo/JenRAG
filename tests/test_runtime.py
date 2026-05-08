@@ -7,7 +7,11 @@ import types
 import unittest
 from unittest import mock
 
-from src.pipeline.generator import build_context
+from src.pipeline.generator import (
+    build_context,
+    build_system_prompt,
+    is_practice_generation_request,
+)
 from src.pipeline.retriever import (
     ChunkHit,
     RelatedTopicHit,
@@ -159,6 +163,65 @@ class RetrievalRuntimeTests(unittest.TestCase):
         self.assertIn("Details: Each level costs linear work.", context)
         self.assertIn("## Related Topics", context)
         self.assertIn("Master Theorem (master-theorem) [related_topic]", context)
+
+    def test_is_practice_generation_request_detects_homework_generation_queries(self) -> None:
+        self.assertTrue(
+            is_practice_generation_request(
+                "Create a new homework problem similar to problem 4."
+            )
+        )
+        self.assertTrue(
+            is_practice_generation_request(
+                "Come up with a practice question about graph cuts."
+            )
+        )
+        self.assertFalse(
+            is_practice_generation_request(
+                "Explain why the graph cut proof works."
+            )
+        )
+
+    def test_build_system_prompt_adds_private_verification_rules_for_practice_requests(
+        self,
+    ) -> None:
+        retrieval_result = RetrievalResult(
+            chunk_hits=[
+                ChunkHit(
+                    text="Use max-flow min-cut duality to reason about cuts.",
+                    title="CMSC 27100 Notes",
+                    section="Minimum Cut",
+                    source_path="latex/cmsc_27100/notes.tex",
+                    course_key="cmsc_27100",
+                    score=0.2,
+                )
+            ],
+            wiki_page_hits=[],
+            related_topics=[],
+        )
+
+        system_prompt = build_system_prompt(
+            "Generate a new practice problem about graph cuts.",
+            retrieval_result,
+        )
+
+        self.assertIn("you may create a NEW question", system_prompt)
+        self.assertIn("solve it completely in private", system_prompt)
+        self.assertIn("concise final answer or solution check", system_prompt)
+
+    def test_build_system_prompt_leaves_normal_explanations_on_base_prompt(self) -> None:
+        retrieval_result = RetrievalResult(
+            chunk_hits=[],
+            wiki_page_hits=[],
+            related_topics=[],
+        )
+
+        system_prompt = build_system_prompt(
+            "Explain the recurrence used in merge sort.",
+            retrieval_result,
+        )
+
+        self.assertNotIn("solve it completely in private", system_prompt)
+        self.assertNotIn("you may create a NEW question", system_prompt)
 
 
 class StreamlitDebugRenderingTests(unittest.TestCase):
