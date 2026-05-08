@@ -1029,9 +1029,9 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
 
 [data-testid="stChatInput"] {{
     position: fixed !important;
-    left: var(--jenrag-chat-composer-left, {CHAT_COMPOSER_VIEWPORT_MARGIN});
+    left: 50%;
     bottom: 0;
-    transform: none;
+    transform: translateX(-50%);
     width: var(--jenrag-chat-composer-width, calc(100vw - ({CHAT_COMPOSER_VIEWPORT_MARGIN} * 2)));
     max-width: min({CHAT_COMPOSER_MAX_WIDTH}, calc(100vw - ({CHAT_COMPOSER_VIEWPORT_MARGIN} * 2)));
     z-index: 30;
@@ -1167,41 +1167,9 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
     }}
 
     function updateChatComposerLayout() {{
-        const contentElement = findContentElement();
-        if (!contentElement) {{
-            return;
-        }}
-
-        const contentRect = contentElement.getBoundingClientRect();
-        const sidebarSafeLeft = getSidebarSafeLeft();
-
-        const safeLeft = Math.max(
-            viewportMarginPixels,
-            contentRect.left,
-            sidebarSafeLeft,
-        );
-        const safeRight = Math.min(
-            window.innerWidth - viewportMarginPixels,
-            contentRect.right,
-        );
-        const availableWidth = Math.max(0, safeRight - safeLeft);
-        const viewportCenterX = window.innerWidth / 2;
-        const availableLeftHalfWidth = Math.max(0, viewportCenterX - safeLeft);
-        const availableRightHalfWidth = Math.max(0, safeRight - viewportCenterX);
-        const centeredWidthLimit = Math.max(
-            0,
-            Math.min(availableLeftHalfWidth, availableRightHalfWidth) * 2,
-        );
         const safeWidth = Math.min(
-            availableWidth,
-            centeredWidthLimit,
+            Math.max(0, window.innerWidth - (viewportMarginPixels * 2)),
             chatComposerMaxWidthPixels,
-        );
-        const centeredSafeLeft = viewportCenterX - (safeWidth / 2);
-
-        rootElement.style.setProperty(
-            "--jenrag-chat-composer-left",
-            `${{centeredSafeLeft}}px`,
         );
         rootElement.style.setProperty(
             "--jenrag-chat-composer-width",
