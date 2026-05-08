@@ -226,104 +226,109 @@ def list_markdown_course_folder_names() -> list[str]:
     return display_names
 
 
+def render_html_fragment(html_fragment: str) -> None:
+    """Render raw HTML without Markdown code-block indentation issues."""
+    if hasattr(st, "html"):
+        st.html(html_fragment)
+        return
+    st.markdown(html_fragment, unsafe_allow_html=True)
+
+
 def inject_application_theme() -> None:
     """Apply the requested monospace blue theme to the Streamlit app."""
-    st.markdown(
-        f"""
-        <style>
-        html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="stMarkdownContainer"], [data-testid="stChatMessageContent"], input, textarea, button, select {{
-            font-family: {MONOSPACE_FONT_FAMILY};
-        }}
+    render_html_fragment(
+        f"""<style>
+html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="stMarkdownContainer"], [data-testid="stChatMessageContent"], input, textarea, button, select {{
+    font-family: {MONOSPACE_FONT_FAMILY};
+}}
 
-        [data-testid="stAppViewContainer"] {{
-            color: {PRIMARY_BLUE_COLOR};
-            background: white;
-        }}
+[data-testid="stAppViewContainer"] {{
+    color: {PRIMARY_BLUE_COLOR};
+    background: white;
+}}
 
-        [data-testid="stAppViewContainer"] h1,
-        [data-testid="stAppViewContainer"] h2,
-        [data-testid="stAppViewContainer"] h3,
-        [data-testid="stAppViewContainer"] label,
-        [data-testid="stAppViewContainer"] [data-testid="stMarkdownContainer"],
-        [data-testid="stAppViewContainer"] p,
-        [data-testid="stAppViewContainer"] li,
-        [data-testid="stAppViewContainer"] span {{
-            color: {DARK_BLUE_ACCENT_COLOR};
-        }}
+[data-testid="stAppViewContainer"] h1,
+[data-testid="stAppViewContainer"] h2,
+[data-testid="stAppViewContainer"] h3,
+[data-testid="stAppViewContainer"] label,
+[data-testid="stAppViewContainer"] [data-testid="stMarkdownContainer"],
+[data-testid="stAppViewContainer"] p,
+[data-testid="stAppViewContainer"] li,
+[data-testid="stAppViewContainer"] span {{
+    color: {DARK_BLUE_ACCENT_COLOR};
+}}
 
-        [data-testid="stSidebar"] {{
-            background: {SIDEBAR_BACKGROUND_COLOR};
-        }}
+[data-testid="stSidebar"] {{
+    background: {SIDEBAR_BACKGROUND_COLOR};
+}}
 
-        [data-testid="stSidebar"] * {{
-            color: {SIDEBAR_TEXT_COLOR};
-        }}
+[data-testid="stSidebar"] * {{
+    color: {SIDEBAR_TEXT_COLOR};
+}}
 
-        [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] code,
-        [data-testid="stSidebar"] code,
-        [data-testid="stSidebar"] label,
-        [data-testid="stSidebar"] p,
-        [data-testid="stSidebar"] span {{
-            color: {SIDEBAR_TEXT_COLOR};
-        }}
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] code,
+[data-testid="stSidebar"] code,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span {{
+    color: {SIDEBAR_TEXT_COLOR};
+}}
 
-        [data-testid="stSidebar"] button,
-        [data-testid="stSidebar"] [data-baseweb="select"] > div,
-        [data-testid="stSidebar"] [data-baseweb="input"] > div,
-        [data-testid="stSidebar"] [data-baseweb="textarea"] {{
-            border-color: {SIDEBAR_TEXT_COLOR};
-        }}
+[data-testid="stSidebar"] button,
+[data-testid="stSidebar"] [data-baseweb="select"] > div,
+[data-testid="stSidebar"] [data-baseweb="input"] > div,
+[data-testid="stSidebar"] [data-baseweb="textarea"] {{
+    border-color: {SIDEBAR_TEXT_COLOR};
+}}
 
-        .jenrag-caption-ticker {{
-            position: relative;
-            overflow: hidden;
-            width: min(100%, 48rem);
-            margin-top: -0.5rem;
-            margin-bottom: 1rem;
-            font-size: 0.7rem;
-            letter-spacing: 0.04em;
-            color: {PRIMARY_BLUE_COLOR};
-            white-space: nowrap;
-        }}
+.jenrag-caption-ticker {{
+    position: relative;
+    overflow: hidden;
+    width: min(100%, 48rem);
+    margin-top: -0.5rem;
+    margin-bottom: 1rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    color: {PRIMARY_BLUE_COLOR};
+    white-space: nowrap;
+}}
 
-        .jenrag-caption-ticker::before,
-        .jenrag-caption-ticker::after {{
-            content: "";
-            position: absolute;
-            top: 0;
-            width: 3rem;
-            height: 100%;
-            z-index: 1;
-        }}
+.jenrag-caption-ticker::before,
+.jenrag-caption-ticker::after {{
+    content: "";
+    position: absolute;
+    top: 0;
+    width: 3rem;
+    height: 100%;
+    z-index: 1;
+}}
 
-        .jenrag-caption-ticker::before {{
-            left: 0;
-            background: linear-gradient(to right, white 20%, transparent);
-        }}
+.jenrag-caption-ticker::before {{
+    left: 0;
+    background: linear-gradient(to right, white 20%, transparent);
+}}
 
-        .jenrag-caption-ticker::after {{
-            right: 0;
-            background: linear-gradient(to left, white 20%, transparent);
-        }}
+.jenrag-caption-ticker::after {{
+    right: 0;
+    background: linear-gradient(to left, white 20%, transparent);
+}}
 
-        .jenrag-caption-track {{
-            display: inline-flex;
-            min-width: max-content;
-            gap: 1.5rem;
-            animation: jenrag-scroll-left 18s linear infinite;
-        }}
+.jenrag-caption-track {{
+    display: inline-flex;
+    min-width: max-content;
+    gap: 1.5rem;
+    animation: jenrag-scroll-left 18s linear infinite;
+}}
 
-        @keyframes jenrag-scroll-left {{
-            from {{
-                transform: translateX(0);
-            }}
-            to {{
-                transform: translateX(-50%);
-            }}
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True,
+@keyframes jenrag-scroll-left {{
+    from {{
+        transform: translateX(0);
+    }}
+    to {{
+        transform: translateX(-50%);
+    }}
+}}
+</style>"""
     )
 
 
@@ -339,13 +344,10 @@ def render_application_header() -> None:
     repeated_scrolling_caption = "  •  ".join(
         [scrolling_caption, scrolling_caption]
     )
-    st.markdown(
-        (
-            '<div class="jenrag-caption-ticker" aria-label="Available course folders">'
-            f'<div class="jenrag-caption-track">{repeated_scrolling_caption}</div>'
-            "</div>"
-        ),
-        unsafe_allow_html=True,
+    render_html_fragment(
+        '<div class="jenrag-caption-ticker" aria-label="Available course folders">'
+        f'<div class="jenrag-caption-track">{repeated_scrolling_caption}</div>'
+        "</div>"
     )
 
 
