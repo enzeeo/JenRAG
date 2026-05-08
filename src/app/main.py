@@ -1062,11 +1062,19 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
 (() => {{
     const viewportMarginPixels = 16;
     const rootElement = document.documentElement;
+    const layoutPollIntervalMilliseconds = 150;
     const contentSelectors = [
-        '[data-testid="stAppViewBlockContainer"]',
         '[data-testid="stMain"]',
         '[data-testid="stMainBlockContainer"]',
         'section[data-testid="stMain"]',
+        '[data-testid="stAppViewBlockContainer"]',
+    ];
+    const sidebarSelectors = [
+        '[data-testid="stSidebar"]',
+        'section[data-testid="stSidebar"]',
+        '[data-testid="stSidebarContent"]',
+        '[aria-expanded="true"][data-testid*="Sidebar"]',
+        '[data-testid*="sidebar"]',
     ];
 
     function findContentElement() {{
@@ -1080,6 +1088,40 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
         return null;
     }}
 
+    function getSidebarSafeLeft() {{
+        let furthestSidebarRight = viewportMarginPixels;
+
+        for (const selector of sidebarSelectors) {{
+            const sidebarElements = document.querySelectorAll(selector);
+            for (const sidebarElement of sidebarElements) {{
+                const sidebarRect = sidebarElement.getBoundingClientRect();
+                const sidebarVisibleWidth = Math.max(
+                    0,
+                    sidebarRect.right - sidebarRect.left,
+                );
+                const sidebarVisibleHeight = Math.max(
+                    0,
+                    sidebarRect.bottom - sidebarRect.top,
+                );
+                const sidebarLooksVisible =
+                    sidebarVisibleWidth > 48 &&
+                    sidebarVisibleHeight > 120 &&
+                    sidebarRect.left < window.innerWidth * 0.4;
+
+                if (!sidebarLooksVisible) {{
+                    continue;
+                }}
+
+                furthestSidebarRight = Math.max(
+                    furthestSidebarRight,
+                    sidebarRect.right + viewportMarginPixels,
+                );
+            }}
+        }}
+
+        return furthestSidebarRight;
+    }}
+
     function updateChatComposerLayout() {{
         const contentElement = findContentElement();
         if (!contentElement) {{
@@ -1087,15 +1129,7 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
         }}
 
         const contentRect = contentElement.getBoundingClientRect();
-        const sidebarElement = document.querySelector('[data-testid="stSidebar"]');
-        let sidebarSafeLeft = viewportMarginPixels;
-        if (sidebarElement) {{
-            const sidebarRect = sidebarElement.getBoundingClientRect();
-            const sidebarVisibleWidth = Math.max(0, sidebarRect.right - sidebarRect.left);
-            if (sidebarVisibleWidth > 48) {{
-                sidebarSafeLeft = sidebarRect.right + viewportMarginPixels;
-            }}
-        }}
+        const sidebarSafeLeft = getSidebarSafeLeft();
 
         const safeLeft = Math.max(
             viewportMarginPixels,
@@ -1129,9 +1163,11 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
     }});
 
     resizeObserver.observe(document.body);
-    const sidebarElement = document.querySelector('[data-testid="stSidebar"]');
-    if (sidebarElement) {{
-        resizeObserver.observe(sidebarElement);
+    for (const selector of sidebarSelectors) {{
+        const sidebarElements = document.querySelectorAll(selector);
+        for (const sidebarElement of sidebarElements) {{
+            resizeObserver.observe(sidebarElement);
+        }}
     }}
     mutationObserver.observe(document.body, {{
         attributes: true,
@@ -1139,12 +1175,17 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
         subtree: true,
     }});
     window.addEventListener("resize", updateChatComposerLayout);
+    const layoutPollIntervalId = window.setInterval(
+        updateChatComposerLayout,
+        layoutPollIntervalMilliseconds,
+    );
     updateChatComposerLayout();
 
     window.__jenragChatComposerCleanup = () => {{
         resizeObserver.disconnect();
         mutationObserver.disconnect();
         window.removeEventListener("resize", updateChatComposerLayout);
+        window.clearInterval(layoutPollIntervalId);
     }};
 }})();
 </script>"""

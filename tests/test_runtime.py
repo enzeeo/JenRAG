@@ -594,17 +594,18 @@ class StreamlitDebugRenderingTests(unittest.TestCase):
         self.assertIn("env(safe-area-inset-bottom)", injected_theme)
         self.assertIn("ResizeObserver", injected_theme)
         self.assertIn("MutationObserver", injected_theme)
+        self.assertIn("layoutPollIntervalMilliseconds = 150", injected_theme)
+        self.assertIn("window.setInterval", injected_theme)
         self.assertIn("--jenrag-chat-composer-left", injected_theme)
         self.assertIn("--jenrag-chat-composer-width", injected_theme)
         self.assertIn('[data-testid="stMain"]', injected_theme)
         self.assertIn('[data-testid="stMainBlockContainer"]', injected_theme)
         self.assertIn('[data-testid="stSidebar"]', injected_theme)
+        self.assertIn("[data-testid=\"stSidebarContent\"]", injected_theme)
+        self.assertIn("[data-testid*=\"sidebar\"]", injected_theme)
+        self.assertIn("furthestSidebarRight", injected_theme)
         self.assertIn("sidebarRect.right + viewportMarginPixels", injected_theme)
         self.assertIn("sidebarVisibleWidth > 48", injected_theme)
-        self.assertLess(
-            injected_theme.index('[data-testid="stAppViewBlockContainer"]'),
-            injected_theme.index('[data-testid="stMain"]'),
-        )
 
 
 class StreamlitSidebarWikiGraphTests(unittest.TestCase):
