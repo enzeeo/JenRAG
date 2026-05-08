@@ -395,22 +395,14 @@ def render_chat_tab(use_reranker: bool, rerank_top_k: int) -> None:
         st.session_state[SIDEBAR_WIKI_GRAPH_STATE_KEY] = (
             build_sidebar_wiki_graph_payload(result["retrieval"])
         )
-        st.markdown(result["answer"])
-        render_retrieval_debug(result["retrieval"])
-
-        columns = st.columns(3)
-        columns[0].metric("Retrieval", f"{result['timings']['retrieval']:.1f}s")
-        columns[1].metric("Generation", f"{result['timings']['generation']:.1f}s")
-        columns[2].metric("Total", f"{result['timings']['total']:.1f}s")
-
-    st.session_state.messages.append(
-        {
+        assistant_message = {
             "role": "assistant",
             "content": result["answer"],
             "retrieval": result["retrieval"],
             "timings": result["timings"],
         }
-    )
+        st.session_state.messages.append(assistant_message)
+        st.rerun()
 
 
 def render_upload_tab() -> None:

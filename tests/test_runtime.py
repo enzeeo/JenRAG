@@ -317,11 +317,65 @@ class StreamlitSidebarWikiGraphTests(unittest.TestCase):
         self.assertEqual(len(graph_call["nodes"]), 2)
         self.assertEqual(len(graph_call["edges"]), 1)
 
+    def test_render_chat_tab_reruns_after_storing_graph_payload(self) -> None:
+        main_module = import_main_module()
+        fake_streamlit = FakeStreamlit()
+        fake_streamlit.chat_input_value = "Explain max flow."
+        main_module.st = fake_streamlit
+
+        retrieval_result = RetrievalResult(
+            chunk_hits=[],
+            wiki_page_hits=[],
+            related_topics=[],
+        )
+        graph_payload = {
+            "nodes": [
+                {
+                    "slug": "max-flow",
+                    "title": "Max Flow",
+                    "page_type": "concept",
+                    "is_seed": True,
+                }
+            ],
+            "edges": [],
+        }
+        pipeline_result = {
+            "answer": "Max flow finds the largest feasible flow.",
+            "retrieval": retrieval_result,
+            "timings": {
+                "retrieval": 0.1,
+                "generation": 0.2,
+                "total": 0.3,
+            },
+        }
+
+        with (
+            mock.patch.object(main_module, "run_pipeline", return_value=pipeline_result),
+            mock.patch.object(
+                main_module,
+                "build_sidebar_wiki_graph_payload",
+                return_value=graph_payload,
+            ),
+        ):
+            main_module.render_chat_tab(use_reranker=True, rerank_top_k=5)
+
+        self.assertEqual(
+            fake_streamlit.session_state[main_module.SIDEBAR_WIKI_GRAPH_STATE_KEY],
+            graph_payload,
+        )
+        self.assertEqual(len(fake_streamlit.session_state["messages"]), 2)
+        self.assertEqual(fake_streamlit.session_state["messages"][0]["role"], "user")
+        self.assertEqual(
+            fake_streamlit.session_state["messages"][1]["content"],
+            "Max flow finds the largest feasible flow.",
+        )
+        self.assertIn(("rerun", None), fake_streamlit.call_log)
+
 
 class FakeStreamlit:
     def __init__(self) -> None:
         self.sidebar = _FakeContextManager()
-        self.session_state: dict[str, object] = {}
+        self.session_state = _FakeSessionState()
         self.call_log: list[tuple[str, object]] = []
         self.header_calls: list[str] = []
         self.expander_labels: list[str] = []
@@ -329,6 +383,7 @@ class FakeStreamlit:
         self.markdown_calls: list[str] = []
         self.caption_calls: list[str] = []
         self.container_calls: list[bool] = []
+        self.chat_input_value: str | None = None
 
     def header(self, value: str) -> None:
         self.header_calls.append(value)
@@ -373,6 +428,44 @@ class FakeStreamlit:
 
     def rerun(self) -> None:
         self.call_log.append(("rerun", None))
+
+    def chat_input(self, prompt: str) -> str | None:
+        self.call_log.append(("chat_input", prompt))
+        return self.chat_input_value
+
+    def chat_message(self, role: str):
+        self.call_log.append(("chat_message", role))
+        return _FakeContextManager()
+
+    def spinner(self, value: str):
+        self.call_log.append(("spinner", value))
+        return _FakeContextManager()
+
+    def columns(self, count: int):
+        self.call_log.append(("columns", count))
+        return [_FakeMetricColumn(self) for _ in range(count)]
+
+    def metric(self, label: str, value: str) -> None:
+        self.call_log.append(("metric", (label, value)))
+
+
+class _FakeMetricColumn:
+    def __init__(self, streamlit_instance: FakeStreamlit) -> None:
+        self.streamlit_instance = streamlit_instance
+
+    def metric(self, label: str, value: str) -> None:
+        self.streamlit_instance.call_log.append(("metric", (label, value)))
+
+
+class _FakeSessionState(dict[str, object]):
+    def __getattr__(self, name: str) -> object:
+        try:
+            return self[name]
+        except KeyError as error:
+            raise AttributeError(name) from error
+
+    def __setattr__(self, name: str, value: object) -> None:
+        self[name] = value
 
 
 class FakeGraphNode:
