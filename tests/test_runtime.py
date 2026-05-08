@@ -579,13 +579,12 @@ class StreamlitDebugRenderingTests(unittest.TestCase):
         injected_theme = "".join(fake_streamlit.markdown_calls)
         self.assertIn('[data-testid="stAppViewBlockContainer"]', injected_theme)
         self.assertIn("padding-bottom: 6rem", injected_theme)
-        self.assertIn('.stBottom[data-testid="stBottom"]', injected_theme)
-        self.assertIn("position: fixed !important", injected_theme)
-        self.assertIn('.stBottom [data-testid="stBottomBlockContainer"]', injected_theme)
-        self.assertIn("padding-bottom: max(1rem, env(safe-area-inset-bottom))", injected_theme)
         self.assertIn('[data-testid="stChatInput"]', injected_theme)
-        self.assertIn("padding-bottom: max(0.25rem, env(safe-area-inset-bottom))", injected_theme)
+        self.assertIn("position: sticky", injected_theme)
+        self.assertIn("bottom: 0", injected_theme)
+        self.assertIn("padding-bottom: max(1rem, env(safe-area-inset-bottom))", injected_theme)
         self.assertIn('[data-testid="stChatInput"] textarea', injected_theme)
+        self.assertNotIn('.stBottom[data-testid="stBottom"]', injected_theme)
         self.assertIn("env(safe-area-inset-bottom)", injected_theme)
 
 

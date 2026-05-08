@@ -1020,33 +1020,17 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"], [data-testid="st
     }}
 }}
 
-/* Chat composer: reserve room so newest message stays visible above fixed input. */
+/* Chat composer: reserve room so newest message stays visible above pinned input. */
 [data-testid="stAppViewBlockContainer"] {{
     padding-bottom: {CHAT_COMPOSER_CONTENT_PADDING};
 }}
 
-/* Pin Streamlit's bottom container so the composer stays visible while preserving layout width. */
-.stBottom[data-testid="stBottom"] {{
-    position: fixed !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    z-index: 20 !important;
-}}
-
-.stBottom[data-testid="stBottom"] > div {{
-    background: transparent;
-}}
-
-.stBottom [data-testid="stBottomBlockContainer"] {{
-    padding-bottom: {CHAT_COMPOSER_BOTTOM_OFFSET};
-}}
-
 [data-testid="stChatInput"] {{
-    position: relative;
-    z-index: 21;
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
     padding-top: 0.25rem;
-    padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
+    padding-bottom: {CHAT_COMPOSER_BOTTOM_OFFSET};
     background: linear-gradient(
         to top,
         rgba(14, 22, 41, 0.98) 0%,
